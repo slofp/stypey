@@ -1,7 +1,8 @@
 <script lang="ts">
-  import MonacoEditor from '$components/Editor/MonacoEditor.svelte';
+  import { browser } from '$app/environment';
   import EditorSettings from '$components/Editor/EditorSettings.svelte';
   import { themeStore } from '$stores/theme.svelte';
+  
   // アイコンを絵文字で代替
   const IconSun = '☀️';
   const IconMoon = '🌙';
@@ -47,6 +48,16 @@ const doubled = numbers.map(n => n * 2);
 console.log(message, user, result, doubled);`);
   
   let settingsOpen = $state(false);
+  let MonacoEditor = $state<typeof import('$components/Editor/MonacoEditor.svelte').default | null>(null);
+  
+  // クライアントサイドでのみMonaco Editorを読み込み
+  $effect(() => {
+    if (browser && !MonacoEditor) {
+      import('$components/Editor/MonacoEditor.svelte').then((module) => {
+        MonacoEditor = module.default;
+      });
+    }
+  });
   
   function handleEditorChange(value: string): void {
     editorValue = value;
@@ -112,13 +123,20 @@ console.log(message, user, result, doubled);`);
       </div>
       
       <div class="editor-wrapper">
-        <MonacoEditor
-          bind:value={editorValue}
-          language="typescript"
-          height="500px"
-          onChange={handleEditorChange}
-          onSave={handleSave}
-        />
+        {#if browser && MonacoEditor}
+          <MonacoEditor
+            bind:value={editorValue}
+            language="typescript"
+            height="500px"
+            onChange={handleEditorChange}
+            onSave={handleSave}
+          />
+        {:else}
+          <div class="editor-placeholder">
+            <div class="spinner"></div>
+            <p>エディタを準備しています...</p>
+          </div>
+        {/if}
       </div>
       
       <div class="playground-footer">
@@ -260,6 +278,36 @@ console.log(message, user, result, doubled);`);
   
   .editor-wrapper {
     padding: 1.5rem;
+    min-height: 500px;
+  }
+  
+  .editor-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    color: var(--text-secondary);
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--border-focus);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .editor-placeholder p {
+    margin-top: 1rem;
+    font-size: 0.875rem;
   }
   
   .playground-footer {

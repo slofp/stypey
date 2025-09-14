@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import * as monaco from 'monaco-editor';
   import type { MonacoEditorInstance, MonacoEditorOptions, EditorMarker } from '$types/editor';
   import { createMonacoOptions } from '$types/editor';
   import { editorStore } from '$stores/editor.svelte';
@@ -30,115 +29,125 @@
   
   let editorContainer: HTMLDivElement;
   let editor: MonacoEditorInstance | null = null;
-  let monaco_: typeof monaco;
+  let monaco: typeof import('monaco-editor') | null = null;
+  let isLoading = $state(true);
+  let error = $state<string | null>(null);
   
   // エディタ設定を監視
   const settings = $derived(editorStore.editorSettings);
   const theme = $derived(themeStore.current);
   
-  // Monaco Editorの初期化
+  // Monaco Editorの初期化（クライアントサイドのみ）
   onMount(async () => {
-    // Monaco Editorの設定
-    monaco_ = monaco;
-    
-    // TypeScript設定
-    monaco_.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false,
-    });
-    
-    monaco_.languages.typescript.typescriptDefaults.setCompilerOptions({
-      target: monaco_.languages.typescript.ScriptTarget.ESNext,
-      module: monaco_.languages.typescript.ModuleKind.ESNext,
-      strict: true,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      allowSyntheticDefaultImports: true,
-      forceConsistentCasingInFileNames: true,
-      moduleResolution: monaco_.languages.typescript.ModuleResolutionKind.NodeJs,
-      resolveJsonModule: true,
-      noImplicitAny: true,
-      strictNullChecks: true,
-      strictFunctionTypes: true,
-      strictBindCallApply: true,
-      strictPropertyInitialization: true,
-      noImplicitThis: true,
-      alwaysStrict: true,
-      noUnusedLocals: true,
-      noUnusedParameters: true,
-      noImplicitReturns: true,
-      noFallthroughCasesInSwitch: true,
-    });
-    
-    // エディタインスタンスの作成
-    const options: Partial<MonacoEditorOptions> = {
-      ...createMonacoOptions(settings),
-      value,
-      language,
-      readOnly,
-      theme: theme === 'dark' ? 'vs-dark' : 'vs',
-      automaticLayout: true,
-      minimap: {
-        enabled: settings.minimap,
-      },
-      scrollBeyondLastLine: false,
-      fontSize: settings.fontSize,
-      tabSize: settings.tabSize,
-      wordWrap: settings.wordWrap,
-      lineNumbers: settings.lineNumbers,
-    };
-    
-    editor = monaco_.editor.create(editorContainer, options);
-    
-    // イベントリスナーの設定
-    editor.onDidChangeModelContent(() => {
-      const newValue = editor?.getValue() ?? '';
-      value = newValue;
-      onChange?.(newValue);
-      editorStore.setValue(newValue);
-    });
-    
-    editor.onDidChangeCursorPosition((e) => {
-      editorStore.updateCursorPosition({
-        line: e.position.lineNumber,
-        column: e.position.column,
+    try {
+      // 動的インポートでMonaco Editorを読み込み
+      monaco = await import('monaco-editor');
+      
+      // TypeScript設定
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: false,
+        noSyntaxValidation: false,
       });
-    });
-    
-    editor.onDidChangeCursorSelection((e) => {
-      const selections = editor?.getSelections() ?? [];
-      editorStore.updateSelections(
-        selections.map(sel => ({
-          start: {
-            line: sel.startLineNumber,
-            column: sel.startColumn,
-          },
-          end: {
-            line: sel.endLineNumber,
-            column: sel.endColumn,
-          },
-        }))
-      );
-    });
-    
-    editor.onDidScrollChange((e) => {
-      editorStore.updateScrollPosition(e.scrollTop, e.scrollLeft);
-    });
-    
-    // 保存コマンドの登録
-    editor.addCommand(monaco_.KeyMod.CtrlCmd | monaco_.KeyCode.KeyS, () => {
-      const currentValue = editor?.getValue() ?? '';
-      onSave?.(currentValue);
-      editorStore.markAsSaved();
-    });
-    
-    // フォーマットコマンド
-    editor.addCommand(monaco_.KeyMod.CtrlCmd | monaco_.KeyMod.Shift | monaco_.KeyCode.KeyF, () => {
-      editor?.getAction('editor.action.formatDocument')?.run();
-    });
-    
-    // マーカーの設定
-    updateMarkers();
+      
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        module: monaco.languages.typescript.ModuleKind.ESNext,
+        strict: true,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        allowSyntheticDefaultImports: true,
+        forceConsistentCasingInFileNames: true,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        resolveJsonModule: true,
+        noImplicitAny: true,
+        strictNullChecks: true,
+        strictFunctionTypes: true,
+        strictBindCallApply: true,
+        strictPropertyInitialization: true,
+        noImplicitThis: true,
+        alwaysStrict: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
+        noImplicitReturns: true,
+        noFallthroughCasesInSwitch: true,
+      });
+      
+      // エディタインスタンスの作成
+      const options: Partial<MonacoEditorOptions> = {
+        ...createMonacoOptions(settings),
+        value,
+        language,
+        readOnly,
+        theme: theme === 'dark' ? 'vs-dark' : 'vs',
+        automaticLayout: true,
+        minimap: {
+          enabled: settings.minimap,
+        },
+        scrollBeyondLastLine: false,
+        fontSize: settings.fontSize,
+        tabSize: settings.tabSize,
+        wordWrap: settings.wordWrap,
+        lineNumbers: settings.lineNumbers,
+      };
+      
+      editor = monaco.editor.create(editorContainer, options);
+      
+      // イベントリスナーの設定
+      editor.onDidChangeModelContent(() => {
+        const newValue = editor?.getValue() ?? '';
+        value = newValue;
+        onChange?.(newValue);
+        editorStore.setValue(newValue);
+      });
+      
+      editor.onDidChangeCursorPosition((e) => {
+        editorStore.updateCursorPosition({
+          line: e.position.lineNumber,
+          column: e.position.column,
+        });
+      });
+      
+      editor.onDidChangeCursorSelection((e) => {
+        const selections = editor?.getSelections() ?? [];
+        editorStore.updateSelections(
+          selections.map(sel => ({
+            start: {
+              line: sel.startLineNumber,
+              column: sel.startColumn,
+            },
+            end: {
+              line: sel.endLineNumber,
+              column: sel.endColumn,
+            },
+          }))
+        );
+      });
+      
+      editor.onDidScrollChange((e) => {
+        editorStore.updateScrollPosition(e.scrollTop, e.scrollLeft);
+      });
+      
+      // 保存コマンドの登録
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+        const currentValue = editor?.getValue() ?? '';
+        onSave?.(currentValue);
+        editorStore.markAsSaved();
+      });
+      
+      // フォーマットコマンド
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
+        editor?.getAction('editor.action.formatDocument')?.run();
+      });
+      
+      // マーカーの設定
+      updateMarkers();
+      
+      isLoading = false;
+    } catch (err) {
+      console.error('Failed to load Monaco Editor:', err);
+      error = 'エディタの読み込みに失敗しました';
+      isLoading = false;
+    }
   });
   
   // エディタの破棄
@@ -173,8 +182,8 @@
   
   // テーマの更新を監視
   $effect(() => {
-    if (editor) {
-      monaco_.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
+    if (editor && monaco) {
+      monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
     }
   });
   
@@ -185,18 +194,18 @@
   
   // マーカーを設定
   function updateMarkers(): void {
-    if (!editor || !monaco_) return;
+    if (!editor || !monaco) return;
     
     const model = editor.getModel();
     if (!model) return;
     
     const monacoMarkers = markers.map(marker => {
-      const markerData: monaco.editor.IMarkerData = {
+      const markerData: import('monaco-editor').editor.IMarkerData = {
         severity: {
-          error: monaco_.MarkerSeverity.Error,
-          warning: monaco_.MarkerSeverity.Warning,
-          info: monaco_.MarkerSeverity.Info,
-          hint: monaco_.MarkerSeverity.Hint,
+          error: monaco!.MarkerSeverity.Error,
+          warning: monaco!.MarkerSeverity.Warning,
+          info: monaco!.MarkerSeverity.Info,
+          hint: monaco!.MarkerSeverity.Hint,
         }[marker.severity],
         startLineNumber: marker.startLineNumber,
         startColumn: marker.startColumn,
@@ -215,21 +224,70 @@
       return markerData;
     });
     
-    monaco_.editor.setModelMarkers(model, 'typescript', monacoMarkers);
+    monaco.editor.setModelMarkers(model, 'typescript', monacoMarkers);
   }
 </script>
 
-<div 
-  bind:this={editorContainer}
-  class="monaco-editor-container"
-  style="height: {height}; width: {width};"
-></div>
+<div class="monaco-editor-wrapper" style="height: {height}; width: {width};">
+  {#if isLoading}
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>エディタを読み込んでいます...</p>
+    </div>
+  {:else if error}
+    <div class="error">
+      <p>{error}</p>
+    </div>
+  {:else}
+    <div 
+      bind:this={editorContainer}
+      class="monaco-editor-container"
+    ></div>
+  {/if}
+</div>
 
 <style>
-  .monaco-editor-container {
+  .monaco-editor-wrapper {
     position: relative;
     border: 1px solid var(--border-default);
     border-radius: 0.5rem;
     overflow: hidden;
+    background-color: var(--bg-code);
+  }
+  
+  .monaco-editor-container {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .loading,
+  .error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--border-focus);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .loading p,
+  .error p {
+    margin-top: 1rem;
+    font-size: 0.875rem;
   }
 </style>

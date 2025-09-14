@@ -28,10 +28,24 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['monaco-editor']
+    include: [
+      'monaco-editor',
+      'monaco-editor/esm/vs/editor/editor.worker',
+      'monaco-editor/esm/vs/language/typescript/ts.worker'
+    ]
   },
   build: {
     target: 'esnext',
-    minify: 'esbuild'
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'monaco-editor': ['monaco-editor']
+        }
+      }
+    }
+  },
+  ssr: {
+    noExternal: ['monaco-editor']
   }
 });
