@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+.pnpm-debug.log*
+
+# Build
+.svelte-kit
+build
+dist
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+*.log
+
+# Temporary
+*.tmp
+*.temp
