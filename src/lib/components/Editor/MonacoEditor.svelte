@@ -27,18 +27,39 @@
     markers = []
   }: Props = $props();
   
-  let editorContainer: HTMLDivElement;
+  let editorContainer: HTMLDivElement | undefined;
   let editor: MonacoEditorInstance | null = null;
   let monaco: typeof import('monaco-editor') | null = null;
   let isLoading = $state(true);
   let error = $state<string | null>(null);
+  let isMounted = $state(false);
   
   // エディタ設定を監視
   const settings = $derived(editorStore.editorSettings);
   const theme = $derived(themeStore.current);
   
-  // Monaco Editorの初期化（クライアントサイドのみ）
-  onMount(async () => {
+  // DOM要素がマウントされたときに呼び出される
+  function initializeEditor(node: HTMLDivElement) {
+    editorContainer = node;
+    isMounted = true;
+    setupEditor();
+    
+    return {
+      destroy() {
+        if (editor) {
+          editor.dispose();
+          editor = null;
+        }
+      }
+    };
+  }
+  
+  // エディタのセットアップ
+  async function setupEditor() {
+    if (!editorContainer) {
+      return;
+    }
+    
     try {
       // 動的インポートでMonaco Editorを読み込み
       monaco = await import('monaco-editor');
@@ -145,14 +166,17 @@
       isLoading = false;
     } catch (err) {
       console.error('Failed to load Monaco Editor:', err);
-      error = 'エディタの読み込みに失敗しました';
+      error = `エディタの読み込みに失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`;
       isLoading = false;
     }
-  });
+  }
   
   // エディタの破棄
   onDestroy(() => {
-    editor?.dispose();
+    if (editor) {
+      editor.dispose();
+      editor = null;
+    }
   });
   
   // 値の更新を監視
@@ -234,14 +258,22 @@
       <div class="spinner"></div>
       <p>エディタを読み込んでいます...</p>
     </div>
-  {:else if error}
+  {/if}
+  
+  {#if error}
     <div class="error">
       <p>{error}</p>
+      <button onclick={() => window.location.reload()} class="retry-button">
+        再読み込み
+      </button>
     </div>
-  {:else}
+  {/if}
+  
+  {#if !error}
     <div 
-      bind:this={editorContainer}
+      use:initializeEditor
       class="monaco-editor-container"
+      class:hidden={isLoading}
     ></div>
   {/if}
 </div>
@@ -253,6 +285,7 @@
     border-radius: 0.5rem;
     overflow: hidden;
     background-color: var(--bg-code);
+    min-height: 100px;
   }
   
   .monaco-editor-container {
@@ -260,13 +293,22 @@
     height: 100%;
   }
   
+  .monaco-editor-container.hidden {
+    visibility: hidden;
+  }
+  
   .loading,
   .error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    background-color: var(--bg-primary);
     color: var(--text-secondary);
   }
   
@@ -289,5 +331,21 @@
   .error p {
     margin-top: 1rem;
     font-size: 0.875rem;
+  }
+  
+  .retry-button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .retry-button:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-dark);
   }
 </style>
