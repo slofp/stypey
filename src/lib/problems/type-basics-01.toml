@@ -1,0 +1,84 @@
+[problem]
+id = "type-basics-01"
+title = "基本的な型注釈"
+description = """
+TypeScriptの基本的な型注釈を学びましょう。
+変数に適切な型を付けて、型エラーを解消してください。
+
+目標:
+- 文字列、数値、真偽値の型注釈を理解する
+- 型推論と明示的な型注釈の違いを理解する
+"""
+difficulty = "easy"
+category = "basics"
+initialCode = """
+// 以下の変数に適切な型注釈を付けてください
+
+const userName = "Alice";
+const userAge = 25;
+const isActive = true;
+
+// 配列の型注釈
+const numbers = [1, 2, 3, 4, 5];
+const words = ["hello", "world"];
+
+// オブジェクトの型注釈
+const user = {
+  id: 1,
+  name: "Bob",
+  email: "bob@example.com"
+};
+
+// 関数の型注釈
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+"""
+solution = """
+// 以下の変数に適切な型注釈を付けてください
+
+const userName: string = "Alice";
+const userAge: number = 25;
+const isActive: boolean = true;
+
+// 配列の型注釈
+const numbers: number[] = [1, 2, 3, 4, 5];
+const words: string[] = ["hello", "world"];
+
+// オブジェクトの型注釈
+const user: {
+  id: number;
+  name: string;
+  email: string;
+} = {
+  id: 1,
+  name: "Bob",
+  email: "bob@example.com"
+};
+
+// 関数の型注釈
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+"""
+hints = [
+  "基本的な型は string, number, boolean です",
+  "配列の型は Type[] または Array<Type> で表現できます",
+  "関数の引数と戻り値にも型を付けることができます"
+]
+tags = ["basics", "types", "annotations"]
+
+[[tests]]
+input = "const test: string = 'hello';"
+expected = "valid"
+description = "文字列の型注釈"
+
+[[tests]]
+input = "const test: number = 42;"
+expected = "valid"
+description = "数値の型注釈"
+
+[[tests]]
+input = "const test: boolean = true;"
+expected = "valid"
+description = "真偽値の型注釈"

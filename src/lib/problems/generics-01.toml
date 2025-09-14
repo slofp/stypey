@@ -1,0 +1,117 @@
+[problem]
+id = "generics-01"
+title = "ジェネリクスの活用"
+description = """
+TypeScriptのジェネリクスを使って、再利用可能な型安全なコードを書きましょう。
+
+目標:
+- ジェネリック関数の定義と使用
+- ジェネリック型の制約
+- ジェネリックインターフェースの定義
+"""
+difficulty = "hard"
+category = "generics"
+initialCode = """
+// 1. ジェネリック関数を定義してください
+// 配列の最初の要素を返す関数
+function getFirst(arr) {
+  return arr[0];
+}
+
+// 2. ジェネリック型に制約を追加してください
+// lengthプロパティを持つ型のみ受け付ける
+function logLength(item) {
+  console.log(item.length);
+  return item;
+}
+
+// 3. ジェネリックインターフェースを定義してください
+// key-valueペアを表現する
+interface KeyValuePair {
+  key: any;
+  value: any;
+}
+
+// 4. ジェネリッククラスを定義してください
+class Stack {
+  private items = [];
+  
+  push(item) {
+    this.items.push(item);
+  }
+  
+  pop() {
+    return this.items.pop();
+  }
+}
+
+// 使用例（型エラーが出ないように）
+const numbers = getFirst([1, 2, 3]);
+const strings = getFirst(["a", "b", "c"]);
+
+const strLength = logLength("hello");
+const arrLength = logLength([1, 2, 3]);
+
+const pair: KeyValuePair = { key: "name", value: "Alice" };
+const numberPair: KeyValuePair = { key: 1, value: 100 };
+
+const stack = new Stack();
+stack.push(1);
+stack.push(2);
+const num = stack.pop();
+"""
+solution = """
+// 1. ジェネリック関数を定義してください
+// 配列の最初の要素を返す関数
+function getFirst<T>(arr: T[]): T | undefined {
+  return arr[0];
+}
+
+// 2. ジェネリック型に制約を追加してください
+// lengthプロパティを持つ型のみ受け付ける
+function logLength<T extends { length: number }>(item: T): T {
+  console.log(item.length);
+  return item;
+}
+
+// 3. ジェネリックインターフェースを定義してください
+// key-valueペアを表現する
+interface KeyValuePair<K, V> {
+  key: K;
+  value: V;
+}
+
+// 4. ジェネリッククラスを定義してください
+class Stack<T> {
+  private items: T[] = [];
+  
+  push(item: T): void {
+    this.items.push(item);
+  }
+  
+  pop(): T | undefined {
+    return this.items.pop();
+  }
+}
+
+// 使用例（型エラーが出ないように）
+const numbers = getFirst([1, 2, 3]);
+const strings = getFirst(["a", "b", "c"]);
+
+const strLength = logLength("hello");
+const arrLength = logLength([1, 2, 3]);
+
+const pair: KeyValuePair<string, string> = { key: "name", value: "Alice" };
+const numberPair: KeyValuePair<number, number> = { key: 1, value: 100 };
+
+const stack = new Stack<number>();
+stack.push(1);
+stack.push(2);
+const num = stack.pop();
+"""
+hints = [
+  "ジェネリクスは <T> のように角括弧で定義します",
+  "型制約は extends キーワードを使います",
+  "複数の型パラメータは <T, U> のようにカンマで区切ります"
+]
+tags = ["generics", "advanced", "types"]

@@ -1,0 +1,81 @@
+[problem]
+id = "interfaces-01"
+title = "インターフェースの定義"
+description = """
+TypeScriptのインターフェースを使って、複雑なオブジェクトの型を定義しましょう。
+
+目標:
+- インターフェースの基本的な定義方法を理解する
+- オプショナルプロパティと読み取り専用プロパティを使いこなす
+- インターフェースの拡張を理解する
+"""
+difficulty = "medium"
+category = "interfaces"
+initialCode = """
+// Userインターフェースを定義してください
+// 必須: id (number), name (string), email (string)
+// オプション: age (number), bio (string)
+
+// ここにUserインターフェースを定義
+
+
+// AdminUserインターフェースを定義してください
+// Userインターフェースを拡張し、permissions (string[]) を追加
+
+
+// 以下のオブジェクトが型エラーにならないようにしてください
+const user: User = {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+  age: 30
+};
+
+const admin: AdminUser = {
+  id: 2,
+  name: "Bob",
+  email: "bob@example.com",
+  permissions: ["read", "write", "delete"]
+};
+"""
+solution = """
+// Userインターフェースを定義してください
+// 必須: id (number), name (string), email (string)
+// オプション: age (number), bio (string)
+
+interface User {
+  readonly id: number;
+  name: string;
+  email: string;
+  age?: number;
+  bio?: string;
+}
+
+// AdminUserインターフェースを定義してください
+// Userインターフェースを拡張し、permissions (string[]) を追加
+
+interface AdminUser extends User {
+  permissions: string[];
+}
+
+// 以下のオブジェクトが型エラーにならないようにしてください
+const user: User = {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+  age: 30
+};
+
+const admin: AdminUser = {
+  id: 2,
+  name: "Bob",
+  email: "bob@example.com",
+  permissions: ["read", "write", "delete"]
+};
+"""
+hints = [
+  "オプショナルプロパティは ? を使います",
+  "読み取り専用プロパティは readonly を使います",
+  "インターフェースの拡張は extends を使います"
+]
+tags = ["interfaces", "types", "objects"]

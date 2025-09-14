@@ -16,7 +16,13 @@ export type ProblemCategory =
   | '条件型'
   | 'Mapped Types'
   | 'Template Literal Types'
-  | 'ユーティリティ型';
+  | 'ユーティリティ型'
+  | 'basics'
+  | 'interfaces'
+  | 'generics'
+  | 'unions'
+  | 'utility-types'
+  | 'advanced';
 
 /**
  * 問題定義のインターフェース
@@ -133,8 +139,63 @@ export function isProblemCategory(value: unknown): value is ProblemCategory {
     '条件型',
     'Mapped Types',
     'Template Literal Types',
-    'ユーティリティ型'
+    'ユーティリティ型',
+    'basics',
+    'interfaces',
+    'generics',
+    'unions',
+    'utility-types',
+    'advanced'
   ];
   
   return categories.includes(value as ProblemCategory);
+}
+
+/**
+ * テストケース定義
+ */
+export interface ProblemTest {
+  readonly input: string;
+  readonly expected: string;
+  readonly description?: string;
+}
+
+/**
+ * 問題定義（簡易版）
+ */
+export interface Problem {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly difficulty: DifficultyLevel;
+  readonly category: ProblemCategory;
+  readonly initialCode: string;
+  readonly solution: string;
+  readonly hints: ReadonlyArray<string>;
+  readonly tags: ReadonlyArray<string>;
+  readonly tests: ReadonlyArray<ProblemTest>;
+}
+
+/**
+ * 型ガード: Problemかどうかを判定
+ */
+export function isProblem(value: unknown): value is Problem {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  
+  const obj = value as Record<string, unknown>;
+  
+  return (
+    typeof obj['id'] === 'string' &&
+    typeof obj['title'] === 'string' &&
+    typeof obj['description'] === 'string' &&
+    isDifficultyLevel(obj['difficulty']) &&
+    isProblemCategory(obj['category']) &&
+    typeof obj['initialCode'] === 'string' &&
+    typeof obj['solution'] === 'string' &&
+    Array.isArray(obj['hints']) &&
+    Array.isArray(obj['tags']) &&
+    Array.isArray(obj['tests'])
+  );
 }
