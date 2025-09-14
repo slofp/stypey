@@ -36,6 +36,7 @@ export interface TypeCheckHint {
 
 export class TypeChecker {
   private static monaco: typeof import('monaco-editor') | null = null;
+  private static modelCounter = 0;
   
   static initialize(monaco: typeof import('monaco-editor')): void {
     this.monaco = monaco;
@@ -88,8 +89,10 @@ export class TypeChecker {
     };
     
     try {
-      // 仮想的なモデルURIを作成
-      const uri = this.monaco.Uri.parse(`inmemory://model/${fileName}`);
+      // ユニークなファイル名でURIを作成
+      this.modelCounter++;
+      const uniqueFileName = `file:///${this.modelCounter}/${fileName}`;
+      const uri = this.monaco.Uri.parse(uniqueFileName);
       
       // 既存のモデルがあれば破棄
       const existingModel = this.monaco.editor.getModel(uri);

@@ -72,6 +72,12 @@
         noSyntaxValidation: false,
       });
       
+      // デフォルトの型定義を追加
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        `declare const console: Console;`,
+        'ts:global.d.ts'
+      );
+      
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ESNext,
         module: monaco.languages.typescript.ModuleKind.ESNext,
@@ -249,6 +255,12 @@
     const model = editor.getModel();
     if (!model) return;
     
+    // マーカーが空の場合はデフォルトのTypeScript診断を使用
+    if (markers.length === 0) {
+      // TypeScriptの自動診断に任せる
+      return;
+    }
+    
     const monacoMarkers = markers.map(marker => {
       const markerData: import('monaco-editor').editor.IMarkerData = {
         severity: {
@@ -274,7 +286,7 @@
       return markerData;
     });
     
-    monaco.editor.setModelMarkers(model, 'typescript', monacoMarkers);
+    monaco.editor.setModelMarkers(model, 'custom', monacoMarkers);
   }
 </script>
 
