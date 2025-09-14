@@ -30,22 +30,22 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'monaco-editor',
+      'monaco-editor/esm/vs/editor/editor.api'
+    ],
+    exclude: [
       'monaco-editor/esm/vs/editor/editor.worker',
       'monaco-editor/esm/vs/language/typescript/ts.worker'
     ]
   },
+  worker: {
+    format: 'es'
+  },
   build: {
     target: 'esnext',
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'monaco-editor': ['monaco-editor']
-        }
-      }
-    }
+    minify: 'esbuild'
   },
   ssr: {
-    noExternal: ['monaco-editor']
+    noExternal: ['@vanilla-extract/css', '@vanilla-extract/vite-plugin'],
+    external: ['monaco-editor']
   }
 });

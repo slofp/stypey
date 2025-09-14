@@ -29,7 +29,6 @@
   
   let editorContainer: HTMLDivElement | undefined;
   let editor: MonacoEditorInstance | null = null;
-  let monaco: typeof import('monaco-editor') | null = null;
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let isMounted = $state(false);
@@ -61,8 +60,11 @@
     }
     
     try {
-      // 動的インポートでMonaco Editorを読み込み
-      monaco = await import('monaco-editor');
+      // Monaco EditorとWorker設定を動的インポート
+      const { setupMonacoEnvironment, monaco } = await import('./MonacoWorker');
+      
+      // WebWorker環境を設定
+      setupMonacoEnvironment();
       
       // TypeScript設定
       monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
@@ -73,6 +75,7 @@
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ESNext,
         module: monaco.languages.typescript.ModuleKind.ESNext,
+        lib: ['ESNext', 'DOM', 'DOM.Iterable'],
         strict: true,
         esModuleInterop: true,
         skipLibCheck: true,
@@ -91,6 +94,9 @@
         noUnusedParameters: true,
         noImplicitReturns: true,
         noFallthroughCasesInSwitch: true,
+        exactOptionalPropertyTypes: true,
+        noUncheckedIndexedAccess: true,
+        noPropertyAccessFromIndexSignature: true,
       });
       
       // エディタインスタンスの作成
@@ -109,6 +115,19 @@
         tabSize: settings.tabSize,
         wordWrap: settings.wordWrap,
         lineNumbers: settings.lineNumbers,
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: {
+          other: true,
+          comments: false,
+          strings: false
+        },
+        parameterHints: {
+          enabled: true
+        },
+        formatOnType: true,
+        formatOnPaste: true,
+        folding: true,
+        foldingStrategy: 'indentation',
       };
       
       editor = monaco.editor.create(editorContainer, options);
@@ -161,7 +180,10 @@
       });
       
       // マーカーの設定
-      updateMarkers();
+      updateMarkers(monaco);
+      
+      // テーマ更新のためにmonacoを保存
+      (window as any).__monaco = monaco;
       
       isLoading = false;
     } catch (err) {
@@ -206,6 +228,7 @@
   
   // テーマの更新を監視
   $effect(() => {
+    const monaco = (window as any).__monaco;
     if (editor && monaco) {
       monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
     }
@@ -213,11 +236,14 @@
   
   // マーカーの更新を監視
   $effect(() => {
-    updateMarkers();
+    const monaco = (window as any).__monaco;
+    if (monaco) {
+      updateMarkers(monaco);
+    }
   });
   
   // マーカーを設定
-  function updateMarkers(): void {
+  function updateMarkers(monaco: typeof import('monaco-editor')): void {
     if (!editor || !monaco) return;
     
     const model = editor.getModel();
@@ -226,10 +252,10 @@
     const monacoMarkers = markers.map(marker => {
       const markerData: import('monaco-editor').editor.IMarkerData = {
         severity: {
-          error: monaco!.MarkerSeverity.Error,
-          warning: monaco!.MarkerSeverity.Warning,
-          info: monaco!.MarkerSeverity.Info,
-          hint: monaco!.MarkerSeverity.Hint,
+          error: monaco.MarkerSeverity.Error,
+          warning: monaco.MarkerSeverity.Warning,
+          info: monaco.MarkerSeverity.Info,
+          hint: monaco.MarkerSeverity.Hint,
         }[marker.severity],
         startLineNumber: marker.startLineNumber,
         startColumn: marker.startColumn,
@@ -310,6 +336,7 @@
     justify-content: center;
     background-color: var(--bg-primary);
     color: var(--text-secondary);
+    z-index: 10;
   }
   
   .spinner {
