@@ -190,7 +190,9 @@ export class AdvancedTypeChecker {
     const text = displayParts
       .map((part: any) => part.text)
       .join('')
-      .trim();
+      .trim()
+      // Remove overload notation (e.g., "(+1 overload)" or "(+2 overloads)")
+      .replace(/\s*\(\+\d+\s+overloads?\)/g, '');
     
     // Check for type alias or interface names
     let aliasName: string | undefined;
@@ -525,6 +527,8 @@ export class AdvancedTypeChecker {
       .replace(/\s+/g, ' ')
       .replace(/\s*([:|,;(){}[\]<>])\s*/g, '$1')
       .replace(/;/g, ',')
+      // Remove overload notation (e.g., "(+1 overload)" or "(+2 overloads)")
+      .replace(/\s*\(\+\d+\s+overloads?\)/g, '')
       .trim();
     
     // Normalize function syntax
