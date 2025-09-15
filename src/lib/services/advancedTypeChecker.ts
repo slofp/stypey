@@ -8,7 +8,7 @@ import type { TypeAssertion } from '$types/problem';
 /**
  * Type comparison modes
  */
-export type ComparisonMode = 'exact' | 'structural' | 'assignable';
+export type ComparisonMode = 'exact' | 'structural' | 'assignable' | 'type-alias';
 
 /**
  * Type information extracted from TypeScript
@@ -17,6 +17,7 @@ export interface ExtractedType {
   readonly raw: string;           // Raw type string from TypeScript
   readonly normalized: string;    // Normalized for comparison
   readonly structure?: TypeStructure; // Parsed structure for deep comparison
+  readonly aliasName?: string;    // Type alias or interface name if available
 }
 
 /**
@@ -89,8 +90,9 @@ export class AdvancedTypeChecker {
     const monaco = this.monaco;
     
     // Create a temporary model for analysis
+    // Don't add 'export {}' as it causes Variable Redeclaration Error
     const uri = monaco.Uri.parse(`inmemory://type-extraction/${Date.now()}.ts`);
-    const model = monaco.editor.createModel(code + '\nexport {};', 'typescript', uri);
+    const model = monaco.editor.createModel(code, 'typescript', uri);
     
     try {
       // Get TypeScript worker
@@ -104,13 +106,8 @@ export class AdvancedTypeChecker {
       const symbols = await this.extractSymbolsWithTypes(code, client, model);
       
       // Process each symbol
-      for (const [name, typeInfo] of symbols) {
-        const structure = this.parseTypeStructure(typeInfo);
-        types.set(name, {
-          raw: typeInfo,
-          normalized: this.normalizeType(typeInfo),
-          structure
-        });
+      for (const [name, extractedType] of symbols) {
+        types.set(name, extractedType);
       }
       
       // Also process emit output for more accurate type information
@@ -140,8 +137,8 @@ export class AdvancedTypeChecker {
     code: string,
     client: any,
     model: import('monaco-editor').editor.ITextModel
-  ): Promise<Map<string, string>> {
-    const symbols = new Map<string, string>();
+  ): Promise<Map<string, ExtractedType>> {
+    const symbols = new Map<string, ExtractedType>();
     
     // Use regex to find all symbols in the code
     
@@ -171,9 +168,9 @@ export class AdvancedTypeChecker {
             );
             
             if (quickInfo?.displayParts) {
-              const typeInfo = this.extractTypeFromQuickInfo(quickInfo.displayParts);
-              if (typeInfo) {
-                symbols.set(name, typeInfo);
+              const extractedType = this.extractTypeFromQuickInfo(quickInfo.displayParts);
+              if (extractedType) {
+                symbols.set(name, extractedType);
               }
             }
           } catch {
@@ -189,13 +186,29 @@ export class AdvancedTypeChecker {
   /**
    * Extract type from QuickInfo display parts
    */
-  private static extractTypeFromQuickInfo(displayParts: any[]): string {
+  private static extractTypeFromQuickInfo(displayParts: any[]): ExtractedType | null {
     const text = displayParts
       .map((part: any) => part.text)
       .join('')
       .trim();
     
-    // Remove variable declaration prefixes
+    // Check for type alias or interface names
+    let aliasName: string | undefined;
+    let typeStr: string = text;
+    
+    // Pattern 1: const/let/var with type annotation: "const user: User"
+    const varPattern = /(?:const|let|var)\s+\w+\s*:\s*([\w<>\[\]]+)(?:\s|$)/;
+    const varMatch = text.match(varPattern);
+    if (varMatch && varMatch[1]) {
+      // Check if it's a simple type name (not generic or array)
+      const typeName = varMatch[1];
+      if (/^[A-Z][\w]*$/.test(typeName)) {
+        aliasName = typeName;
+      }
+      typeStr = varMatch[1];
+    }
+    
+    // Pattern 2: Full type definition extraction
     const patterns = [
       /(?:const|let|var)\s+\w+\s*:\s*([\s\S]+)/,
       /function\s+\w+(\([^)]*\)(?:\s*:\s*[\s\S]+)?)/,
@@ -205,11 +218,18 @@ export class AdvancedTypeChecker {
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        return match[1].trim();
+        typeStr = match[1].trim();
+        break;
       }
     }
     
-    return text;
+    const structure = this.parseTypeStructure(typeStr);
+    return {
+      raw: typeStr,
+      normalized: this.normalizeType(typeStr),
+      structure,
+      ...(aliasName && { aliasName })
+    };
   }
   
   /**
@@ -515,9 +535,49 @@ export class AdvancedTypeChecker {
         return this.compareStructural(expected, actual);
       case 'assignable':
         return this.compareAssignable(expected, actual);
+      case 'type-alias':
+        return this.compareTypeAlias(expected, actual);
       default:
         return { matches: false, mode, details: 'Unknown comparison mode' };
     }
+  }
+  
+  /**
+   * Type alias comparison (checks alias names first, then falls back to structural)
+   */
+  private static compareTypeAlias(expected: ExtractedType, actual: ExtractedType): ComparisonResult {
+    // First, check if actual has an alias name that matches the expected type
+    if (actual.aliasName) {
+      // Compare the alias name with the expected raw type
+      if (actual.aliasName === expected.raw || actual.aliasName === expected.aliasName) {
+        return {
+          matches: true,
+          mode: 'type-alias',
+          details: `Type alias '${actual.aliasName}' matches`
+        };
+      }
+    }
+    
+    // If expected is a type alias like "Partial<User>", try to match it
+    if (expected.raw.includes('<') && actual.raw.includes('<')) {
+      // Extract the base types and compare
+      const expectedBase = expected.raw.split('<')[0];
+      const actualBase = actual.raw.split('<')[0];
+      if (expectedBase === actualBase) {
+        // For utility types, do structural comparison
+        return this.compareStructural(expected, actual);
+      }
+    }
+    
+    // Fall back to structural comparison
+    const structuralResult = this.compareStructural(expected, actual);
+    return {
+      ...structuralResult,
+      mode: 'type-alias',
+      details: structuralResult.matches 
+        ? 'Types are structurally equivalent (alias name did not match)'
+        : `Expected type alias '${expected.raw}' but got '${actual.aliasName || actual.raw}'`
+    };
   }
   
   /**

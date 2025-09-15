@@ -110,35 +110,35 @@ symbol = "PartialUser"
 expectedType = "Partial<User>"
 kind = "property"
 description = "すべてのプロパティをオプショナルにしたUser"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "RequiredUser"
 expectedType = "Required<User>"
 kind = "property"
 description = "すべてのプロパティを必須にしたUser"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "UserBasicInfo"
 expectedType = "Pick<User, 'id' | 'name' | 'email'>"
 kind = "property"
 description = "特定のプロパティのみを抽出したUser"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "UserWithoutStatus"
 expectedType = "Omit<User, 'isActive'>"
 kind = "property"
 description = "特定のプロパティを除外したUser"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "ReadonlyUser"
 expectedType = "Readonly<User>"
 kind = "property"
 description = "読み取り専用にしたUser"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "StringNumberMap"
@@ -159,18 +159,18 @@ symbol = "ActiveStatus"
 expectedType = "Exclude<Status, 'cancelled'>"
 kind = "property"
 description = "cancelledを除外したステータス"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "updateUser"
 expectedType = "(user: PartialUser) => void"
 kind = "function"
 description = "部分的なUserで更新する関数"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "createUser"
 expectedType = "(user: RequiredUser) => void"
 kind = "function"
 description = "完全なUserで作成する関数"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"

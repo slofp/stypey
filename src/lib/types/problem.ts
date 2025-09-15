@@ -159,7 +159,7 @@ export type TypeAssertionKind = 'variable' | 'function' | 'parameter' | 'return'
 /**
  * 型比較モード
  */
-export type TypeComparisonMode = 'exact' | 'structural' | 'assignable';
+export type TypeComparisonMode = 'exact' | 'structural' | 'assignable' | 'type-alias';
 
 /**
  * 型推論要件定義

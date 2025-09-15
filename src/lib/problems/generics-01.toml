@@ -122,14 +122,14 @@ symbol = "pair"
 expectedType = "KeyValuePair<string, string>"
 kind = "variable"
 description = "文字列のkey-valueペア"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "numberPair"
 expectedType = "KeyValuePair<number, number>"
 kind = "variable"
 description = "数値のkey-valueペア"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "num"

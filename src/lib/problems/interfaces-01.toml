@@ -86,11 +86,11 @@ symbol = "user"
 expectedType = "User"
 kind = "variable"
 description = "user は User インターフェース型であること"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "admin"
 expectedType = "AdminUser"
 kind = "variable"
 description = "admin は AdminUser インターフェース型であること"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"

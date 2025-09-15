@@ -106,7 +106,7 @@ symbol = "handleResult"
 expectedType = "(result: Result) => void"
 kind = "function"
 description = "Result型を処理する関数"
-comparisonMode = "assignable"
+comparisonMode = "type-alias"
 
 [[typeAssertions]]
 symbol = "processData"
