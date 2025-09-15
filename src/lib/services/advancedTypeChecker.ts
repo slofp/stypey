@@ -642,26 +642,8 @@ export class AdvancedTypeChecker {
   ): boolean {
     // Different kinds of types
     if (expected.kind !== actual.kind) {
-      // Special case 1: literals can match their base types
-      if (actual.kind === 'literal' && expected.kind === 'primitive') {
-        const literalType = typeof actual.value === 'string' ? 'string' :
-                           typeof actual.value === 'number' ? 'number' :
-                           typeof actual.value === 'boolean' ? 'boolean' : '';
-        if (literalType === expected.base) {
-          return true;
-        }
-      }
-      
-      // Special case 2: primitive types can accept literal types (reverse)
-      if (expected.kind === 'primitive' && actual.kind === 'literal') {
-        const literalType = typeof actual.value === 'string' ? 'string' :
-                           typeof actual.value === 'number' ? 'number' :
-                           typeof actual.value === 'boolean' ? 'boolean' : '';
-        if (literalType === expected.base) {
-          return true;
-        }
-      }
-      
+      // No special cases for structural comparison - types must match exactly
+      // Special cases for literal types are only in isAssignable method
       differences.push({
         path,
         expected: expected.kind,
