@@ -73,10 +73,10 @@
       
       <div class="settings-group">
         <div class="setting-item">
-          <label class="setting-label">
+          <div class="setting-label">
             <span>{IconTextSize}</span>
             フォントサイズ
-          </label>
+          </div>
           <div class="setting-control">
             <button
               class="btn-small"
@@ -111,10 +111,10 @@
         </div>
         
         <div class="setting-item">
-          <label class="setting-label">
+          <div class="setting-label">
             <span>{IconWrapText}</span>
             折り返し
-          </label>
+          </div>
           <div class="setting-control">
             <button
               class="btn-toggle"
@@ -127,10 +127,10 @@
         </div>
         
         <div class="setting-item">
-          <label class="setting-label">
+          <div class="setting-label">
             <span>{IconNumber}</span>
             行番号
-          </label>
+          </div>
           <div class="setting-control">
             <button
               class="btn-toggle"
@@ -148,10 +148,10 @@
         </div>
         
         <div class="setting-item">
-          <label class="setting-label">
+          <div class="setting-label">
             <span>{IconMap}</span>
             ミニマップ
-          </label>
+          </div>
           <div class="setting-control">
             <button
               class="btn-toggle"

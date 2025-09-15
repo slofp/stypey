@@ -51,7 +51,7 @@
 
 <div class="filter-container">
   <div class="filter-section">
-    <label class="filter-label">難易度</label>
+    <div class="filter-label">難易度</div>
     <div class="filter-buttons">
       {#each difficulties as difficulty}
         <Button
@@ -66,7 +66,7 @@
   </div>
   
   <div class="filter-section">
-    <label class="filter-label">カテゴリ</label>
+    <div class="filter-label">カテゴリ</div>
     <div class="filter-buttons">
       {#each categories as category}
         <Button
@@ -81,7 +81,7 @@
   </div>
   
   <div class="filter-section">
-    <label class="filter-label">表示オプション</label>
+    <div class="filter-label">表示オプション</div>
     <div class="filter-checkbox">
       <label class="checkbox-label">
         <input

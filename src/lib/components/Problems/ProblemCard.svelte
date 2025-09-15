@@ -34,11 +34,11 @@
   });
 </script>
 
-<Card 
-  hoverable={true}
-  onclick={onClick}
-  class="problem-card {isCompleted ? 'completed' : ''}"
->
+<div class="problem-card" class:completed={isCompleted}>
+  <Card 
+    hoverable={true}
+    onclick={onClick}
+  >
   <div class="card-header">
     <div class="header-top">
       <h3 class="problem-title">
@@ -74,14 +74,15 @@
       {/each}
     </div>
   {/if}
-</Card>
+  </Card>
+</div>
 
 <style>
   .problem-card {
     transition: all 0.3s ease;
   }
   
-  .problem-card.completed {
+  .problem-card.completed :global(.card) {
     background-color: var(--success-bg);
     border-color: var(--success-border);
   }
