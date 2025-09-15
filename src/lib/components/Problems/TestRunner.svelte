@@ -84,17 +84,31 @@
           }
         } else {
           testResult.status = 'failed';
-          testResult.error = assertionResult.result.details || '型が一致しません';
-          if (assertionResult.actualType) {
-            testResult.actualType = assertionResult.actualType;
+          
+          // エラーメッセージを分かりやすく整形
+          if (assertionResult.result.differences && assertionResult.result.differences.length > 0) {
+            const mainDiff = assertionResult.result.differences[0];
+            if (mainDiff && (!mainDiff.path || mainDiff.path === '' || mainDiff.path === 'ルート')) {
+              // ルートレベルのエラーは直接的なメッセージにする
+              testResult.error = mainDiff.reason;
+            } else if (mainDiff) {
+              // ネストしたエラーは詳細を表示
+              testResult.error = `型の不一致: ${mainDiff.reason}`;
+              if (assertionResult.result.differences.length > 1) {
+                const otherDiffs = assertionResult.result.differences.slice(1)
+                  .map(d => `  • ${d.path ? d.path + ': ' : ''}${d.reason}`)
+                  .join('\n');
+                testResult.error += '\n詳細:\n' + otherDiffs;
+              }
+            } else {
+              testResult.error = assertionResult.result.details || '型が一致しません';
+            }
+          } else {
+            testResult.error = assertionResult.result.details || '型が一致しません';
           }
           
-          // 詳細な差分情報を追加
-          if (assertionResult.result.differences) {
-            const diffs = assertionResult.result.differences
-              .map(d => `  ${d.path || 'ルート'}: ${d.reason}`)
-              .join('\n');
-            testResult.error += '\n' + diffs;
+          if (assertionResult.actualType) {
+            testResult.actualType = assertionResult.actualType;
           }
           
           allPassed = false;
