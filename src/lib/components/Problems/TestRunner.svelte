@@ -22,10 +22,12 @@
   let isRunning = $state(false);
   let testResults = $state<TestResult[]>([]);
   let overallResult = $state<'idle' | 'running' | 'success' | 'failure'>('idle');
+  let parseError = $state<string | null>(null);
   
   async function runTests() {
     isRunning = true;
     overallResult = 'running';
+    parseError = null;
     testResults = problem.typeAssertions.map(assertion => ({
       assertion,
       status: 'pending'
@@ -37,23 +39,17 @@
     try {
       const syntaxCheck = await TypeChecker.checkCode(userCode, 'syntax-check.ts');
       if (syntaxCheck.errors.length > 0) {
-        // 構文エラーがある場合は全てのテストを失敗にする
-        for (const testResult of testResults) {
-          testResult.status = 'failed';
-          testResult.error = syntaxCheck.errors[0]?.message || '構文エラーがあります';
-        }
-        testResults = [...testResults];
+        // 構文エラーがある場合は解析エラーとして表示
+        parseError = `構文エラー: ${syntaxCheck.errors[0]?.message || 'コードに構文エラーがあります'}`;
+        testResults = [];
         overallResult = 'failure';
         isRunning = false;
         return;
       }
     } catch (err) {
       // エラー処理
-      for (const testResult of testResults) {
-        testResult.status = 'failed';
-        testResult.error = '型チェックに失敗しました';
-      }
-      testResults = [...testResults];
+      parseError = `コードの解析に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`;
+      testResults = [];
       overallResult = 'failure';
       isRunning = false;
       return;
@@ -100,12 +96,11 @@
       }
     } catch (err) {
       // AST解析エラー
-      for (const testResult of testResults) {
-        testResult.status = 'failed';
-        testResult.error = 'AST解析に失敗しました: ' + (err instanceof Error ? err.message : 'Unknown error');
-        allPassed = false;
-      }
-      testResults = [...testResults];
+      parseError = `型解析に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`;
+      testResults = [];
+      overallResult = 'failure';
+      isRunning = false;
+      return;
     }
     
     overallResult = allPassed ? 'success' : 'failure';
@@ -156,7 +151,14 @@
     </Button>
   </div>
   
-  {#if testResults.length > 0}
+  {#if parseError}
+    <div class="parse-error-container">
+      <div class="parse-error-icon">⚠️</div>
+      <h3 class="parse-error-title">コードの解析に失敗しました</h3>
+      <p class="parse-error-message">{parseError}</p>
+      <p class="parse-error-hint">コードの構文を確認し、もう一度お試しください。</p>
+    </div>
+  {:else if testResults.length > 0}
     <div class="test-results">
       {#each testResults as result, index (index)}
         <div class="test-case {result.status}">
@@ -477,5 +479,43 @@
     margin: 0;
     font-size: 0.875rem;
     color: var(--error-text);
+  }
+  
+  .parse-error-container {
+    padding: 1.5rem;
+    background-color: var(--error-bg);
+    border: 2px solid var(--error-border);
+    border-radius: 0.75rem;
+    text-align: center;
+  }
+  
+  .parse-error-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .parse-error-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--error-text);
+  }
+  
+  .parse-error-message {
+    margin: 0 0 0.75rem 0;
+    padding: 0.75rem;
+    background-color: var(--bg-primary);
+    border-radius: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    text-align: left;
+    word-break: break-word;
+  }
+  
+  .parse-error-hint {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
   }
 </style>

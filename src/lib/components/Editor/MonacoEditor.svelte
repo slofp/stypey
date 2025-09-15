@@ -118,29 +118,30 @@
         'ts:global.d.ts'
       );
       
+      // TypeScriptコンパイラオプションの設定（学習用に最適化）
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ESNext,
         module: monaco.languages.typescript.ModuleKind.ESNext,
         lib: ['ESNext', 'DOM', 'DOM.Iterable'],
-        strict: true,
+        
+        // 学習用に緩和した設定
+        strict: false,                         // strictモードを無効化
+        noImplicitAny: false,                  // anyの使用を許可（学習初期段階で有用）
+        strictNullChecks: false,               // null/undefinedチェックを緩和
+        strictFunctionTypes: false,            // 関数型の厳格チェックを無効化
+        strictBindCallApply: false,            // bind/call/applyの厳格チェックを無効化
+        strictPropertyInitialization: false,   // プロパティ初期化チェックを無効化
+        noImplicitThis: false,                 // thisの暗黙のanyを許可
+        alwaysStrict: false,                   // use strictディレクティブを強制しない
+        
+        // 基本的な設定は維持
         esModuleInterop: true,
         skipLibCheck: true,
         allowSyntheticDefaultImports: true,
         forceConsistentCasingInFileNames: true,
         moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
         resolveJsonModule: true,
-        noImplicitAny: true,
-        strictNullChecks: true,
-        strictFunctionTypes: true,
-        strictBindCallApply: true,
-        strictPropertyInitialization: true,
-        noImplicitThis: true,
-        alwaysStrict: true,
-        noImplicitReturns: true,
-        noFallthroughCasesInSwitch: true,
-        exactOptionalPropertyTypes: true,
-        noUncheckedIndexedAccess: true,
-        noPropertyAccessFromIndexSignature: true,
+        isolatedModules: true,                 // 各ファイルを独立したモジュールとして扱う
       });
       
       // モデルの作成（既存のモデルがあれば破棄）
