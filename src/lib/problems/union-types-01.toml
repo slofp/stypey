@@ -1,0 +1,98 @@
+[problem]
+id = "union-types-01"
+title = "Union型の基礎"
+description = """
+TypeScriptのUnion型を使って、複数の型を扱う方法を学びましょう。
+
+目標:
+- Union型の定義と使用方法
+- Type Guardsによる型の絞り込み
+- Discriminated Unionsの実装
+"""
+difficulty = "medium"
+category = "unions"
+initialCode = """
+// 1. 基本的なUnion型を定義してください
+// 文字列または数値を受け取る
+function processValue(value) {
+  // 型に応じて処理を分岐
+  if (/* 型チェック */) {
+    return value.toUpperCase();
+  } else {
+    return value * 2;
+  }
+}
+
+// 2. Discriminated Unionを定義してください
+// 成功/エラー/ローディング状態を表現
+type Result = any;
+
+function handleResult(result: Result) {
+  // 状態に応じて処理
+}
+
+// 3. 配列またはオブジェクトを処理する関数
+function processData(data) {
+  // 配列なら長さ、オブジェクトならキーの数を返す
+}
+"""
+solution = """
+// 1. 基本的なUnion型を定義してください
+// 文字列または数値を受け取る
+function processValue(value: string | number): string | number {
+  // 型に応じて処理を分岐
+  if (typeof value === 'string') {
+    return value.toUpperCase();
+  } else {
+    return value * 2;
+  }
+}
+
+// 2. Discriminated Unionを定義してください
+// 成功/エラー/ローディング状態を表現
+type Result = 
+  | { status: 'success'; data: string }
+  | { status: 'error'; error: string }
+  | { status: 'loading' };
+
+function handleResult(result: Result): void {
+  // 状態に応じて処理
+  switch (result.status) {
+    case 'success':
+      console.log('Data:', result.data);
+      break;
+    case 'error':
+      console.error('Error:', result.error);
+      break;
+    case 'loading':
+      console.log('Loading...');
+      break;
+  }
+}
+
+// 3. 配列またはオブジェクトを処理する関数
+function processData<T>(data: T[] | Record<string, T>): number {
+  // 配列なら長さ、オブジェクトならキーの数を返す
+  if (Array.isArray(data)) {
+    return data.length;
+  } else {
+    return Object.keys(data).length;
+  }
+}
+"""
+hints = [
+  "Union型は | を使って複数の型を組み合わせます",
+  "typeof演算子で基本的な型を判定できます",
+  "Discriminated Unionは共通のプロパティで型を識別します"
+]
+tags = ["union", "types", "guards", "discriminated"]
+
+[[tests]]
+input = "const result = processValue('hello');"
+expected = "'HELLO'"
+description = "文字列の処理"
+
+[[tests]]
+input = "const result = processValue(5);"
+expected = "10"
+description = "数値の処理"

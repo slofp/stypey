@@ -1,0 +1,109 @@
+[problem]
+id = "utility-types-01"
+title = "ユーティリティ型の活用"
+description = """
+TypeScriptの組み込みユーティリティ型を使って、既存の型を変換しましょう。
+
+目標:
+- Partial, Required, Readonly の使い方
+- Pick, Omit の使い方
+- Record, Exclude, Extract の使い方
+"""
+difficulty = "medium"
+category = "utility-types"
+initialCode = """
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  age?: number;
+  isActive: boolean;
+}
+
+// 1. すべてのプロパティをオプショナルにする
+type PartialUser = any;
+
+// 2. すべてのプロパティを必須にする
+type RequiredUser = any;
+
+// 3. 特定のプロパティだけを取り出す (id, name, email)
+type UserBasicInfo = any;
+
+// 4. 特定のプロパティを除外する (isActive を除外)
+type UserWithoutStatus = any;
+
+// 5. すべてのプロパティを読み取り専用にする
+type ReadonlyUser = any;
+
+// 6. 文字列のキーと数値の値を持つオブジェクト型を作る
+type StringNumberMap = any;
+
+// 7. Union型から特定の型を除外する
+type Status = 'pending' | 'success' | 'error' | 'cancelled';
+type ActiveStatus = any; // 'cancelled' を除外
+
+// 使用例
+function updateUser(user: PartialUser): void {
+  // 部分的な更新が可能
+}
+
+function createUser(user: RequiredUser): void {
+  // すべてのフィールドが必要
+}
+"""
+solution = """
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  age?: number;
+  isActive: boolean;
+}
+
+// 1. すべてのプロパティをオプショナルにする
+type PartialUser = Partial<User>;
+
+// 2. すべてのプロパティを必須にする
+type RequiredUser = Required<User>;
+
+// 3. 特定のプロパティだけを取り出す (id, name, email)
+type UserBasicInfo = Pick<User, 'id' | 'name' | 'email'>;
+
+// 4. 特定のプロパティを除外する (isActive を除外)
+type UserWithoutStatus = Omit<User, 'isActive'>;
+
+// 5. すべてのプロパティを読み取り専用にする
+type ReadonlyUser = Readonly<User>;
+
+// 6. 文字列のキーと数値の値を持つオブジェクト型を作る
+type StringNumberMap = Record<string, number>;
+
+// 7. Union型から特定の型を除外する
+type Status = 'pending' | 'success' | 'error' | 'cancelled';
+type ActiveStatus = Exclude<Status, 'cancelled'>; // 'cancelled' を除外
+
+// 使用例
+function updateUser(user: PartialUser): void {
+  // 部分的な更新が可能
+}
+
+function createUser(user: RequiredUser): void {
+  // すべてのフィールドが必要
+}
+"""
+hints = [
+  "Partial<T> はすべてのプロパティをオプショナルにします",
+  "Pick<T, K> は指定したキーのプロパティだけを取り出します",
+  "Exclude<T, U> はUnion型から特定の型を除外します"
+]
+tags = ["utility", "types", "transformation", "builtin"]
+
+[[tests]]
+input = "const partial: PartialUser = { name: 'Alice' };"
+expected = "valid"
+description = "部分的なユーザーオブジェクト"
+
+[[tests]]
+input = "const info: UserBasicInfo = { id: 1, name: 'Bob', email: 'bob@example.com' };"
+expected = "valid"
+description = "基本情報のみ"

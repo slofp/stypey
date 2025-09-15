@@ -84,15 +84,9 @@ console.log(message, user, result, doubled);`);
     <div class="header-content">
       <h1 class="logo">TypeMaster</h1>
       <nav class="nav">
-        <button class="nav-link" onclick={() => {}}>
-          問題一覧
-        </button>
-        <button class="nav-link" onclick={() => {}}>
-          進捗
-        </button>
-        <button class="nav-link" onclick={() => {}}>
-          ヘルプ
-        </button>
+        <a href="/" class="nav-link active">ホーム</a>
+        <a href="/problems" class="nav-link">問題一覧</a>
+        <a href="/progress" class="nav-link">進捗</a>
       </nav>
       <div class="header-actions">
         <EditorSettings bind:isOpen={settingsOpen} />
@@ -193,18 +187,22 @@ console.log(message, user, result, doubled);`);
   }
   
   .nav-link {
-    background: none;
-    border: none;
     color: var(--text-secondary);
+    text-decoration: none;
     font-size: 0.875rem;
     font-weight: 500;
-    cursor: pointer;
     transition: color 0.2s ease;
     padding: 0.5rem 0;
+    border-bottom: 2px solid transparent;
   }
   
   .nav-link:hover {
     color: var(--text-primary);
+  }
+  
+  .nav-link.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
   }
   
   .header-actions {

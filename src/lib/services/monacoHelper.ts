@@ -28,10 +28,12 @@ export class MonacoHelper {
           source: marker.source || 'TypeScript',
         };
         
-        if (marker.code) {
-          editorMarker.code = typeof marker.code === 'object' 
-            ? marker.code.value 
-            : marker.code.toString();
+        const code = marker.code 
+          ? (typeof marker.code === 'object' ? marker.code.value : marker.code.toString())
+          : undefined;
+        
+        if (code) {
+          editorMarker = { ...editorMarker, code };
         }
         
         markers.push(editorMarker);
@@ -60,7 +62,7 @@ export class MonacoHelper {
         endLineNumber: marker.endLineNumber,
         endColumn: marker.endColumn,
         message: marker.message,
-        source: marker.source,
+        ...(marker.source && { source: marker.source }),
       };
       
       if (marker.code) {
