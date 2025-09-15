@@ -136,8 +136,6 @@
         strictPropertyInitialization: true,
         noImplicitThis: true,
         alwaysStrict: true,
-        noUnusedLocals: true,
-        noUnusedParameters: true,
         noImplicitReturns: true,
         noFallthroughCasesInSwitch: true,
         exactOptionalPropertyTypes: true,
