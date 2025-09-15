@@ -30,6 +30,7 @@
   let editorContainer: HTMLDivElement | undefined;
   let editor = $state<MonacoEditorInstance | null>(null);
   let monacoInstance = $state<typeof import('monaco-editor') | null>(null);
+  let model = $state<import('monaco-editor').editor.ITextModel | null>(null);
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let isMounted = $state(false);
@@ -49,6 +50,10 @@
         if (editor) {
           editor.dispose();
           editor = null;
+        }
+        if (model) {
+          model.dispose();
+          model = null;
         }
       }
     };
@@ -109,11 +114,23 @@
         noPropertyAccessFromIndexSignature: true,
       });
       
+      // モデルの作成または取得
+      const modelUri = monaco.Uri.parse(`typescript://main-${Date.now()}.ts`);
+      let editorModel = monaco.editor.getModel(modelUri);
+      
+      if (!editorModel) {
+        editorModel = monaco.editor.createModel(value, language, modelUri);
+      } else {
+        editorModel.setValue(value);
+      }
+      
+      // モデルをstateに保存
+      model = editorModel;
+      
       // エディタインスタンスの作成
       const options: Partial<MonacoEditorOptions> = {
         ...createMonacoOptions(settings),
-        value,
-        language,
+        model: editorModel,
         readOnly,
         theme: theme === 'dark' ? 'vs-dark' : 'vs',
         automaticLayout: true,
@@ -206,8 +223,12 @@
     if (editor) {
       editor.dispose();
       editor = null;
-      monacoInstance = null;
     }
+    if (model) {
+      model.dispose();
+      model = null;
+    }
+    monacoInstance = null;
   });
   
   // 値の更新を監視

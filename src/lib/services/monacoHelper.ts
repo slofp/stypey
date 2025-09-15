@@ -18,6 +18,10 @@ export class MonacoHelper {
       const monacoMarkers = monaco.editor.getModelMarkers({ resource: model.uri });
       
       monacoMarkers.forEach(marker => {
+        const code = marker.code 
+          ? (typeof marker.code === 'object' ? marker.code.value : marker.code.toString())
+          : undefined;
+        
         const editorMarker: EditorMarker = {
           severity: getSeverity(marker.severity),
           startLineNumber: marker.startLineNumber,
@@ -26,15 +30,8 @@ export class MonacoHelper {
           endColumn: marker.endColumn,
           message: marker.message,
           source: marker.source || 'TypeScript',
+          ...(code && { code }),
         };
-        
-        const code = marker.code 
-          ? (typeof marker.code === 'object' ? marker.code.value : marker.code.toString())
-          : undefined;
-        
-        if (code) {
-          editorMarker = { ...editorMarker, code };
-        }
         
         markers.push(editorMarker);
       });
