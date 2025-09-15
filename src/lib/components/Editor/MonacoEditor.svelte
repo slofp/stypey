@@ -28,7 +28,8 @@
   }: Props = $props();
   
   let editorContainer: HTMLDivElement | undefined;
-  let editor: MonacoEditorInstance | null = null;
+  let editor = $state<MonacoEditorInstance | null>(null);
+  let monacoInstance = $state<typeof import('monaco-editor') | null>(null);
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let isMounted = $state(false);
@@ -65,6 +66,9 @@
       
       // WebWorker環境を設定
       setupMonacoEnvironment();
+      
+      // Monacoインスタンスを保存
+      monacoInstance = monaco;
       
       // TypeScript設定
       monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
@@ -136,25 +140,26 @@
         foldingStrategy: 'indentation',
       };
       
-      editor = monaco.editor.create(editorContainer, options);
+      const newEditor = monaco.editor.create(editorContainer, options);
+      editor = newEditor;
       
       // イベントリスナーの設定
-      editor.onDidChangeModelContent(() => {
-        const newValue = editor?.getValue() ?? '';
+      newEditor.onDidChangeModelContent(() => {
+        const newValue = newEditor.getValue();
         value = newValue;
         onChange?.(newValue);
         editorStore.setValue(newValue);
       });
       
-      editor.onDidChangeCursorPosition((e) => {
+      newEditor.onDidChangeCursorPosition((e) => {
         editorStore.updateCursorPosition({
           line: e.position.lineNumber,
           column: e.position.column,
         });
       });
       
-      editor.onDidChangeCursorSelection((e) => {
-        const selections = editor?.getSelections() ?? [];
+      newEditor.onDidChangeCursorSelection((e) => {
+        const selections = newEditor.getSelections() ?? [];
         editorStore.updateSelections(
           selections.map(sel => ({
             start: {
@@ -169,27 +174,24 @@
         );
       });
       
-      editor.onDidScrollChange((e) => {
+      newEditor.onDidScrollChange((e) => {
         editorStore.updateScrollPosition(e.scrollTop, e.scrollLeft);
       });
       
       // 保存コマンドの登録
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-        const currentValue = editor?.getValue() ?? '';
+      newEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+        const currentValue = newEditor.getValue();
         onSave?.(currentValue);
         editorStore.markAsSaved();
       });
       
       // フォーマットコマンド
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
-        editor?.getAction('editor.action.formatDocument')?.run();
+      newEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
+        newEditor.getAction('editor.action.formatDocument')?.run();
       });
       
       // マーカーの設定
       updateMarkers(monaco);
-      
-      // テーマ更新のためにmonacoを保存
-      (window as any).__monaco = monaco;
       
       isLoading = false;
     } catch (err) {
@@ -204,20 +206,24 @@
     if (editor) {
       editor.dispose();
       editor = null;
+      monacoInstance = null;
     }
   });
   
   // 値の更新を監視
   $effect(() => {
-    if (editor && editor.getValue() !== value) {
-      editor.setValue(value);
+    const currentEditor = editor;
+    if (currentEditor && currentEditor.getValue() !== value) {
+      currentEditor.setValue(value);
     }
   });
   
   // 設定の更新を監視
   $effect(() => {
-    if (editor) {
-      editor.updateOptions({
+    const currentEditor = editor;
+    if (currentEditor && settings) {
+      console.log('Updating editor settings:', settings);
+      currentEditor.updateOptions({
         fontSize: settings.fontSize,
         tabSize: settings.tabSize,
         wordWrap: settings.wordWrap,
@@ -234,16 +240,18 @@
   
   // テーマの更新を監視
   $effect(() => {
-    const monaco = (window as any).__monaco;
-    if (editor && monaco) {
+    const currentEditor = editor;
+    const monaco = monacoInstance;
+    if (currentEditor && monaco && theme) {
+      console.log('Updating editor theme to:', theme);
       monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
     }
   });
   
   // マーカーの更新を監視
   $effect(() => {
-    const monaco = (window as any).__monaco;
-    if (monaco) {
+    const monaco = monacoInstance;
+    if (monaco && markers) {
       updateMarkers(monaco);
     }
   });

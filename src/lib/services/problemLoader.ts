@@ -1,11 +1,6 @@
 import type { Problem, DifficultyLevel, ProblemCategory } from '$types/problem';
 import { ProblemParser } from './problemParser';
-
-// Import all problem TOML files
-const problemModules = import.meta.glob('/src/lib/problems/*.toml', {
-  query: '?raw',
-  import: 'default',
-});
+import { problemContents } from '$lib/problems';
 
 export class ProblemLoader {
   private static problems: Map<string, Problem> = new Map();
@@ -14,18 +9,20 @@ export class ProblemLoader {
   static async loadAllProblems(): Promise<void> {
     if (this.loaded) return;
     
-    const entries = Object.entries(problemModules);
+    const entries = Object.entries(problemContents);
+    console.log('Loading problems from:', entries.length, 'files');
     
-    for (const [path, importFn] of entries) {
+    for (const [id, content] of entries) {
       try {
-        const content = await importFn() as string;
         const problem = ProblemParser.parseToml(content);
         this.problems.set(problem.id, problem);
+        console.log('Loaded problem:', problem.id);
       } catch (error) {
-        console.error(`Failed to load problem from ${path}:`, error);
+        console.error(`Failed to load problem ${id}:`, error);
       }
     }
     
+    console.log('Total problems loaded:', this.problems.size);
     this.loaded = true;
   }
   
