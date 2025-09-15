@@ -57,6 +57,20 @@ export class ASTAnalyzer {
   }
   
   /**
+   * 全てのinmemory://ast-analysis/モデルを破棄
+   */
+  private static disposeAllASTModels(): void {
+    if (!this.monaco) return;
+    
+    const allModels = this.monaco.editor.getModels();
+    allModels.forEach(model => {
+      if (model.uri.toString().startsWith('inmemory://ast-analysis/')) {
+        model.dispose();
+      }
+    });
+  }
+  
+  /**
    * コードを解析して型推論情報を取得
    */
   static async analyzeCode(code: string): Promise<TypeInferenceResult> {
@@ -74,15 +88,28 @@ export class ASTAnalyzer {
     const errors: string[] = [];
     
     try {
-      // 一時的なモデルを作成
-      const uri = monaco.Uri.file(`/ast-analysis-${Date.now()}.ts`);
-      const model = monaco.editor.createModel(code, 'typescript', uri);
+      // 全ての既存AST解析モデルを破棄
+      this.disposeAllASTModels();
+      
+      // 一時的なモデルを作成（inmemory://スキームを使用）
+      const uri = monaco.Uri.parse(`inmemory://ast-analysis/${Date.now()}.ts`);
+      
+      // 既存のモデルがあれば破棄（念のため）
+      const existingModel = monaco.editor.getModel(uri);
+      if (existingModel) {
+        existingModel.dispose();
+      }
+      
+      // コードをモジュールとして扱うために export {} を追加
+      const moduleCode = code + '\nexport {};';
+      
+      const model = monaco.editor.createModel(moduleCode, 'typescript', uri);
       
       // TypeScript Workerを取得
       const worker = await monaco.languages.typescript.getTypeScriptWorker();
       const client = await worker(model.uri);
       
-      // コード内のシンボルを解析
+      // コード内のシンボルを解析（元のコードを使用）
       await this.extractSymbols(code, client, model, symbols);
       
       // モデルを破棄

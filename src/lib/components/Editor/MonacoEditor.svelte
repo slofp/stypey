@@ -150,8 +150,8 @@
         model.dispose();
       }
       
-      // TypeScriptワーカーが認識できるファイルURIを使用
-      const modelUri = monaco.Uri.file(`/virtual/editor-${Date.now()}.ts`);
+      // TypeScriptワーカーが認識できるファイルURIを使用（inmemory://スキーム）
+      const modelUri = monaco.Uri.parse(`inmemory://editor/${Date.now()}.ts`);
       const editorModel = monaco.editor.createModel(value, language, modelUri);
       
       // モデルをstateに保存

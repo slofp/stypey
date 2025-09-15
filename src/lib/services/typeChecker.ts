@@ -59,6 +59,7 @@ export class TypeChecker {
       forceConsistentCasingInFileNames: true,
       moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
       resolveJsonModule: true,
+      isolatedModules: true, // 各ファイルを独立したモジュールとして扱う
       noImplicitAny: true,
       strictNullChecks: true,
       strictFunctionTypes: true,
@@ -73,6 +74,20 @@ export class TypeChecker {
       exactOptionalPropertyTypes: true,
       noUncheckedIndexedAccess: true,
       noPropertyAccessFromIndexSignature: true,
+    });
+  }
+  
+  /**
+   * 全てのinmemory://typecheck/モデルを破棄
+   */
+  private static disposeAllTypeCheckModels(): void {
+    if (!this.monaco) return;
+    
+    const allModels = this.monaco.editor.getModels();
+    allModels.forEach(model => {
+      if (model.uri.toString().startsWith('inmemory://typecheck/')) {
+        model.dispose();
+      }
     });
   }
   
@@ -99,18 +114,24 @@ export class TypeChecker {
     const monaco = this.monaco!;
     
     try {
-      // ユニークなファイル名でURIを作成
-      this.modelCounter++;
-      const uri = monaco.Uri.file(`/typecheck/${this.modelCounter}-${fileName}`);
+      // 全ての既存typecheckモデルを破棄
+      this.disposeAllTypeCheckModels();
       
-      // 既存のモデルがあれば破棄
+      // ユニークなURIを作成（inmemory://スキームを使用）
+      this.modelCounter++;
+      const uri = monaco.Uri.parse(`inmemory://typecheck/${this.modelCounter}-${fileName}`);
+      
+      // 既存のモデルがあれば破棄（念のため）
       const existingModel = monaco.editor.getModel(uri);
       if (existingModel) {
         existingModel.dispose();
       }
       
+      // コードをモジュールとして扱うために export {} を追加
+      const moduleCode = code + '\nexport {};';
+      
       // 新しいモデルを作成
-      const model = monaco.editor.createModel(code, 'typescript', uri);
+      const model = monaco.editor.createModel(moduleCode, 'typescript', uri);
       
       // TypeScript Workerから診断情報を取得
       const worker = await monaco.languages.typescript.getTypeScriptWorker();
