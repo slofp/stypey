@@ -100,23 +100,13 @@ kind = "variable"
 description = "words は string[] 型であること"
 
 [[typeAssertions]]
+symbol = "user"
+expectedType = "{id: number, name: string, email: string}"
+kind = "variable"
+description = "user は適切なオブジェクト型であること"
+
+[[typeAssertions]]
 symbol = "greet"
 expectedType = "(name: string) => string"
 kind = "function"
 description = "greet は string を受け取り string を返す関数であること"
-
-# 従来のテスト（後方互換性のため残す）
-[[tests]]
-input = "const test: string = 'hello';"
-expected = "valid"
-description = "文字列の型注釈"
-
-[[tests]]
-input = "const test: number = 42;"
-expected = "valid"
-description = "数値の型注釈"
-
-[[tests]]
-input = "const test: boolean = true;"
-expected = "valid"
-description = "真偽値の型注釈"

@@ -79,3 +79,16 @@ hints = [
   "インターフェースの拡張は extends を使います"
 ]
 tags = ["interfaces", "types", "objects"]
+
+# 型推論要件
+[[typeAssertions]]
+symbol = "user"
+expectedType = "User"
+kind = "variable"
+description = "user は User インターフェース型であること"
+
+[[typeAssertions]]
+symbol = "admin"
+expectedType = "AdminUser"
+kind = "variable"
+description = "admin は AdminUser インターフェース型であること"

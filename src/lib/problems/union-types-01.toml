@@ -86,13 +86,9 @@ hints = [
   "Discriminated Unionは共通のプロパティで型を識別します"
 ]
 tags = ["union", "types", "guards", "discriminated"]
-
-[[tests]]
-input = "const result = processValue('hello');"
-expected = "'HELLO'"
-description = "文字列の処理"
-
-[[tests]]
-input = "const result = processValue(5);"
-expected = "10"
-description = "数値の処理"
+typeAssertions = [
+  "processValue: (value: string | number) => string | number",
+  "Result: type Result = { status: 'success'; data: string } | { status: 'error'; error: string } | { status: 'loading' }",
+  "handleResult: (result: Result) => void",
+  "processData: <T>(data: T[] | Record<string, T>) => number"
+]

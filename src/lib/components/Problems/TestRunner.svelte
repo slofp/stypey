@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Problem, ProblemTest } from '$types/problem';
+  import type { Problem, TypeAssertion } from '$types/problem';
   import { TypeChecker } from '$services/typeChecker';
   import { ASTAnalyzer } from '$services/astAnalyzer';
   import { Button, Badge } from '$components/UI';
@@ -11,8 +11,9 @@
   }
   
   interface TestResult {
-    test: ProblemTest;
+    assertion: TypeAssertion;
     status: 'pending' | 'running' | 'passed' | 'failed';
+    actualType?: string;
     error?: string;
   }
   
@@ -25,8 +26,8 @@
   async function runTests() {
     isRunning = true;
     overallResult = 'running';
-    testResults = problem.tests.map(test => ({
-      test,
+    testResults = problem.typeAssertions.map(assertion => ({
+      assertion,
       status: 'pending'
     }));
     
@@ -58,86 +59,53 @@
       return;
     }
     
-    // 型推論要件がある場合はAST解析を実行
-    if (problem.typeAssertions && problem.typeAssertions.length > 0) {
-      try {
-        // AST解析で型情報を取得
-        const inferenceResult = await ASTAnalyzer.analyzeCode(userCode);
-        
-        // 型推論要件を検証
-        const validationResult = ASTAnalyzer.validateTypeAssertions(
-          inferenceResult,
-          problem.typeAssertions
-        );
-        
-        // 検証結果を表示用に変換
-        for (let i = 0; i < Math.min(validationResult.results.length, testResults.length); i++) {
-          const testResult = testResults[i];
-          const assertionResult = validationResult.results[i];
-          
-          if (!testResult || !assertionResult) continue;
-          
-          testResult.status = 'running';
-          testResults = [...testResults];
-          
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          if (assertionResult.passed) {
-            testResult.status = 'passed';
-          } else {
-            testResult.status = 'failed';
-            testResult.error = assertionResult.message;
-            allPassed = false;
-          }
-          
-          testResults = [...testResults];
-        }
-      } catch (err) {
-        // AST解析エラー
-        for (const testResult of testResults) {
-          testResult.status = 'failed';
-          testResult.error = 'AST解析に失敗しました';
-          allPassed = false;
-        }
-        testResults = [...testResults];
-      }
-    } else {
-      // 従来のテスト方式（後方互換性のため残す）
-      for (let i = 0; i < problem.tests.length; i++) {
+    // AST解析で型推論要件を検証
+    try {
+      // AST解析で型情報を取得
+      const inferenceResult = await ASTAnalyzer.analyzeCode(userCode);
+      
+      // 型推論要件を検証
+      const validationResult = ASTAnalyzer.validateTypeAssertions(
+        inferenceResult,
+        problem.typeAssertions
+      );
+      
+      // 検証結果を表示用に変換
+      for (let i = 0; i < validationResult.results.length; i++) {
         const testResult = testResults[i];
-        if (!testResult) continue;
+        const assertionResult = validationResult.results[i];
+        
+        if (!testResult || !assertionResult) continue;
         
         testResult.status = 'running';
         testResults = [...testResults];
         
-        try {
-          const testCode = `
-${userCode}
-
-// Test case ${i + 1}
-{
-  ${testResult.test.input}
-}
-`;
-          
-          const checkResult = await TypeChecker.checkCode(testCode, `test-${i + 1}.ts`);
-          
-          if (checkResult.errors.length > 0) {
-            testResult.status = 'failed';
-            testResult.error = checkResult.errors[0]?.message || '型エラーがあります';
-            allPassed = false;
-          } else {
-            testResult.status = 'passed';
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        if (assertionResult.passed) {
+          testResult.status = 'passed';
+          if (assertionResult.actualType) {
+            testResult.actualType = assertionResult.actualType;
           }
-        } catch (err) {
+        } else {
           testResult.status = 'failed';
-          testResult.error = err instanceof Error ? err.message : 'テストの実行に失敗しました';
+          testResult.error = assertionResult.message;
+          if (assertionResult.actualType) {
+            testResult.actualType = assertionResult.actualType;
+          }
           allPassed = false;
         }
         
         testResults = [...testResults];
-        await new Promise(resolve => setTimeout(resolve, 300));
       }
+    } catch (err) {
+      // AST解析エラー
+      for (const testResult of testResults) {
+        testResult.status = 'failed';
+        testResult.error = 'AST解析に失敗しました: ' + (err instanceof Error ? err.message : 'Unknown error');
+        allPassed = false;
+      }
+      testResults = [...testResults];
     }
     
     overallResult = allPassed ? 'success' : 'failure';
@@ -196,9 +164,9 @@ ${userCode}
             <div class="test-info">
               <span class="test-icon">{getStatusIcon(result.status)}</span>
               <span class="test-name">
-                テスト {index + 1}
-                {#if result.test.description}
-                  : {result.test.description}
+                {result.assertion.symbol}
+                {#if result.assertion.description}
+                  : {result.assertion.description}
                 {/if}
               </span>
             </div>
@@ -216,33 +184,46 @@ ${userCode}
           {/if}
           
           <details class="test-details">
-            <summary>コードを表示</summary>
-            <pre class="test-code">{result.test.input}</pre>
-            {#if result.test.expected}
-              <div class="expected-output">
-                <strong>期待される結果:</strong>
-                <pre>{result.test.expected}</pre>
+            <summary>詳細を表示</summary>
+            <div class="assertion-details">
+              <div class="detail-row">
+                <span class="detail-label">シンボル:</span>
+                <span class="detail-value">{result.assertion.symbol}</span>
               </div>
-            {/if}
+              <div class="detail-row">
+                <span class="detail-label">種類:</span>
+                <span class="detail-value">{result.assertion.kind}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">期待される型:</span>
+                <pre class="type-value">{result.assertion.expectedType}</pre>
+              </div>
+              {#if result.actualType}
+                <div class="detail-row">
+                  <span class="detail-label">実際の型:</span>
+                  <pre class="type-value">{result.actualType}</pre>
+                </div>
+              {/if}
+            </div>
           </details>
         </div>
       {/each}
     </div>
-  {:else if problem.tests.length === 0}
+  {:else if problem.typeAssertions.length === 0}
     <div class="no-tests">
-      <p>この問題にはテストケースがありません</p>
+      <p>この問題には型推論要件がありません</p>
     </div>
   {:else}
     <div class="test-list">
       <p class="test-count">
-        {problem.tests.length} 個のテストケースがあります
+        {problem.typeAssertions.length} 個の型推論要件があります
       </p>
       <ul class="test-descriptions">
-        {#each problem.tests as test, index}
+        {#each problem.typeAssertions as assertion}
           <li>
-            テスト {index + 1}
-            {#if test.description}
-              : {test.description}
+            {assertion.symbol} ({assertion.kind})
+            {#if assertion.description}
+              : {assertion.description}
             {/if}
           </li>
         {/each}
@@ -365,6 +346,44 @@ ${userCode}
   
   .test-details summary:hover {
     color: var(--text-primary);
+  }
+  
+  .assertion-details {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .detail-label {
+    min-width: 100px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  
+  .detail-value {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .type-value {
+    margin: 0;
+    padding: 0.5rem;
+    background-color: var(--bg-code);
+    border: 1px solid var(--border-light);
+    border-radius: 0.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    overflow-x: auto;
   }
   
   .test-code {

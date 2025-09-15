@@ -1,5 +1,5 @@
 import { parse as parseToml } from 'smol-toml';
-import type { Problem, ProblemTest, TypeAssertion } from '$types/problem';
+import type { Problem, TypeAssertion } from '$types/problem';
 import { isProblem } from '$types/problem';
 
 export interface ProblemToml {
@@ -14,9 +14,10 @@ export interface ProblemToml {
     hints?: string[];
     tags?: string[];
   };
-  tests?: Array<{
-    input: string;
-    expected: string;
+  typeAssertions?: Array<{
+    symbol: string;
+    expectedType: string;
+    kind?: string;
     description?: string;
   }>;
 }
@@ -37,14 +38,7 @@ export class ProblemParser {
         throw new Error('Invalid TOML: missing required fields (id, title)');
       }
       
-      const tests: ProblemTest[] = (parsed.tests || [])
-        .map((test: any): ProblemTest => ({
-          input: test.input,
-          expected: test.expected,
-          ...(test.description !== undefined && { description: test.description }),
-        }));
-      
-      // 型推論要件をパース
+      // 型推論要件をパース（必須）
       const typeAssertions: TypeAssertion[] = (parsed.typeAssertions || [])
         .map((assertion: any): TypeAssertion => ({
           symbol: assertion.symbol,
@@ -63,8 +57,7 @@ export class ProblemParser {
         solution: problemData.solution || '',
         hints: problemData.hints || [],
         tags: problemData.tags || [],
-        tests,
-        ...(typeAssertions.length > 0 && { typeAssertions }),
+        typeAssertions,
       };
       
       if (!isProblem(result)) {
@@ -103,16 +96,18 @@ export class ProblemParser {
       lines.push(`tags = [${problem.tags.map((t: string) => `"${t}"`).join(', ')}]`);
     }
     
-    if (problem.tests.length > 0) {
+    if (problem.typeAssertions.length > 0) {
       lines.push('');
-      problem.tests.forEach((test: ProblemTest, index: number) => {
-        lines.push(`[[tests]]`);
-        lines.push(`input = """${test.input}"""`);
-        lines.push(`expected = """${test.expected}"""`);
-        if (test.description) {
-          lines.push(`description = "${test.description}"`);
+      lines.push('# 型推論要件');
+      problem.typeAssertions.forEach((assertion: TypeAssertion, index: number) => {
+        lines.push(`[[typeAssertions]]`);
+        lines.push(`symbol = "${assertion.symbol}"`);
+        lines.push(`expectedType = "${assertion.expectedType}"`);
+        lines.push(`kind = "${assertion.kind}"`);
+        if (assertion.description) {
+          lines.push(`description = "${assertion.description}"`);
         }
-        if (index < problem.tests.length - 1) {
+        if (index < problem.typeAssertions.length - 1) {
           lines.push('');
         }
       });

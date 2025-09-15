@@ -55,9 +55,9 @@
       <Badge variant="default" size="small" isOutlined={true}>
         {categoryDisplay()}
       </Badge>
-      {#if problem.tests.length > 0}
+      {#if problem.typeAssertions.length > 0}
         <span class="test-count">
-          テスト: {problem.tests.length}
+          型要件: {problem.typeAssertions.length}
         </span>
       {/if}
     </div>

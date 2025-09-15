@@ -152,15 +152,6 @@ export function isProblemCategory(value: unknown): value is ProblemCategory {
 }
 
 /**
- * テストケース定義
- */
-export interface ProblemTest {
-  readonly input: string;
-  readonly expected: string;
-  readonly description?: string;
-}
-
-/**
  * 型推論要件の種別
  */
 export type TypeAssertionKind = 'variable' | 'function' | 'parameter' | 'return' | 'property';
@@ -188,8 +179,7 @@ export interface Problem {
   readonly solution: string;
   readonly hints: ReadonlyArray<string>;
   readonly tags: ReadonlyArray<string>;
-  readonly tests: ReadonlyArray<ProblemTest>;
-  readonly typeAssertions?: ReadonlyArray<TypeAssertion>; // 型推論要件
+  readonly typeAssertions: ReadonlyArray<TypeAssertion>; // 型推論要件
 }
 
 /**
@@ -212,6 +202,6 @@ export function isProblem(value: unknown): value is Problem {
     typeof obj['solution'] === 'string' &&
     Array.isArray(obj['hints']) &&
     Array.isArray(obj['tags']) &&
-    Array.isArray(obj['tests'])
+    Array.isArray(obj['typeAssertions'])
   );
 }

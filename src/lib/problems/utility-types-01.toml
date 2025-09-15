@@ -97,13 +97,16 @@ hints = [
   "Exclude<T, U> はUnion型から特定の型を除外します"
 ]
 tags = ["utility", "types", "transformation", "builtin"]
-
-[[tests]]
-input = "const partial: PartialUser = { name: 'Alice' };"
-expected = "valid"
-description = "部分的なユーザーオブジェクト"
-
-[[tests]]
-input = "const info: UserBasicInfo = { id: 1, name: 'Bob', email: 'bob@example.com' };"
-expected = "valid"
-description = "基本情報のみ"
+typeAssertions = [
+  "User: interface User { id: number; name: string; email: string; age?: number; isActive: boolean; }",
+  "PartialUser: Partial<User>",
+  "RequiredUser: Required<User>",
+  "UserBasicInfo: Pick<User, 'id' | 'name' | 'email'>",
+  "UserWithoutStatus: Omit<User, 'isActive'>",
+  "ReadonlyUser: Readonly<User>",
+  "StringNumberMap: Record<string, number>",
+  "Status: 'pending' | 'success' | 'error' | 'cancelled'",
+  "ActiveStatus: Exclude<Status, 'cancelled'>",
+  "updateUser: (user: PartialUser) => void",
+  "createUser: (user: RequiredUser) => void"
+]
