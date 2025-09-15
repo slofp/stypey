@@ -196,30 +196,40 @@ export class AdvancedTypeChecker {
     let aliasName: string | undefined;
     let typeStr: string = text;
     
-    // Pattern 1: const/let/var with type annotation: "const user: User"
-    const varPattern = /(?:const|let|var)\s+\w+\s*:\s*([\w<>\[\]]+)(?:\s|$)/;
-    const varMatch = text.match(varPattern);
-    if (varMatch && varMatch[1]) {
-      // Check if it's a simple type name (not generic or array)
-      const typeName = varMatch[1];
-      if (/^[A-Z][\w]*$/.test(typeName)) {
-        aliasName = typeName;
-      }
-      typeStr = varMatch[1];
-    }
+    // Pattern for const/let/var declarations with inferred literal types
+    // Example: "const userName: \"Alice\""
+    const literalPattern = /(?:const|let|var)\s+\w+:\s+(["'][^"']*["']|\d+|true|false)$/;
+    const literalMatch = text.match(literalPattern);
     
-    // Pattern 2: Full type definition extraction
-    const patterns = [
-      /(?:const|let|var)\s+\w+\s*:\s*([\s\S]+)/,
-      /function\s+\w+(\([^)]*\)(?:\s*:\s*[\s\S]+)?)/,
-      /(?:interface|type)\s+\w+\s*([\s\S]+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        typeStr = match[1].trim();
-        break;
+    if (literalMatch && literalMatch[1]) {
+      // This is a literal type from const declaration
+      typeStr = literalMatch[1];
+    } else {
+      // Pattern 1: const/let/var with explicit type annotation: "const user: User"
+      const varPattern = /(?:const|let|var)\s+\w+\s*:\s*([\w<>\[\]]+)(?:\s|$)/;
+      const varMatch = text.match(varPattern);
+      if (varMatch && varMatch[1]) {
+        // Check if it's a simple type name (not generic or array)
+        const typeName = varMatch[1];
+        if (/^[A-Z][\w]*$/.test(typeName)) {
+          aliasName = typeName;
+        }
+        typeStr = varMatch[1];
+      } else {
+        // Pattern 2: Full type definition extraction
+        const patterns = [
+          /(?:const|let|var)\s+\w+\s*:\s*([\s\S]+)/,
+          /function\s+\w+(\([^)]*\)(?:\s*:\s*[\s\S]+)?)/,
+          /(?:interface|type)\s+\w+\s*([\s\S]+)/
+        ];
+        
+        for (const pattern of patterns) {
+          const match = text.match(pattern);
+          if (match && match[1]) {
+            typeStr = match[1].trim();
+            break;
+          }
+        }
       }
     }
     
@@ -270,10 +280,17 @@ export class AdvancedTypeChecker {
     }
     
     // Literal types
-    if (/^["'].*["']$/.test(trimmed) || /^\d+$/.test(trimmed) || /^true|false$/.test(trimmed)) {
+    // Handle escaped quotes too (e.g., \"Alice\" from Monaco QuickInfo)
+    const literalStringPattern = /^(\\"|\\')(.*)(\\"|\\')$|^["'].*["']$/;
+    if (literalStringPattern.test(trimmed) || /^\d+$/.test(trimmed) || /^true|false$/.test(trimmed)) {
+      // Remove quotes (both regular and escaped)
+      const value = trimmed
+        .replace(/^(\\"|\\')/, '')
+        .replace(/(\\"|\\')$/, '')
+        .replace(/^["']|["']$/g, '');
       return { 
         kind: 'literal', 
-        value: trimmed.replace(/^["']|["']$/g, '')
+        value
       };
     }
     
@@ -625,8 +642,18 @@ export class AdvancedTypeChecker {
   ): boolean {
     // Different kinds of types
     if (expected.kind !== actual.kind) {
-      // Special case: literals can match their base types
+      // Special case 1: literals can match their base types
       if (actual.kind === 'literal' && expected.kind === 'primitive') {
+        const literalType = typeof actual.value === 'string' ? 'string' :
+                           typeof actual.value === 'number' ? 'number' :
+                           typeof actual.value === 'boolean' ? 'boolean' : '';
+        if (literalType === expected.base) {
+          return true;
+        }
+      }
+      
+      // Special case 2: primitive types can accept literal types (reverse)
+      if (expected.kind === 'primitive' && actual.kind === 'literal') {
         const literalType = typeof actual.value === 'string' ? 'string' :
                            typeof actual.value === 'number' ? 'number' :
                            typeof actual.value === 'boolean' ? 'boolean' : '';
