@@ -119,8 +119,9 @@
         model.dispose();
       }
       
-      // 新しいモデルを作成（URIは省略してMonacoに自動生成させる）
-      const editorModel = monaco.editor.createModel(value, language);
+      // TypeScriptワーカーが認識できるファイルURIを使用
+      const modelUri = monaco.Uri.file(`/virtual/editor-${Date.now()}.ts`);
+      const editorModel = monaco.editor.createModel(value, language, modelUri);
       
       // モデルをstateに保存
       model = editorModel;

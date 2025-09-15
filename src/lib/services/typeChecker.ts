@@ -91,8 +91,7 @@ export class TypeChecker {
     try {
       // ユニークなファイル名でURIを作成
       this.modelCounter++;
-      const uniqueFileName = `file:///${this.modelCounter}/${fileName}`;
-      const uri = this.monaco.Uri.parse(uniqueFileName);
+      const uri = this.monaco.Uri.file(`/typecheck/${this.modelCounter}-${fileName}`);
       
       // 既存のモデルがあれば破棄
       const existingModel = this.monaco.editor.getModel(uri);
