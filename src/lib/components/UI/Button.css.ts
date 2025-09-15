@@ -27,7 +27,9 @@ export const variants = styleVariants({
     backgroundColor: 'var(--accent-primary)',
     color: 'white',
     ':hover': {
-      backgroundColor: 'var(--accent-hover)',
+      backgroundColor: 'color-mix(in srgb, var(--accent-primary) 85%, black)',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     },
   }],
   secondary: [buttonBase, {

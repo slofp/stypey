@@ -362,8 +362,9 @@
   }
   
   .hint-toggle:hover {
-    background-color: var(--bg-primary);
+    background-color: var(--bg-secondary);
     border-color: var(--border-dark);
+    transform: translateX(2px);
   }
   
   .hint-content {

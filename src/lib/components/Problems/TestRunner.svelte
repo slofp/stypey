@@ -164,7 +164,7 @@
   <div class="runner-header">
     <h3 class="runner-title">テストケース</h3>
     <Button
-      variant="primary"
+      variant="secondary"
       onclick={runTests}
       disabled={isRunning}
       isLoading={isRunning}
