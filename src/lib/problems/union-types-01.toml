@@ -86,9 +86,31 @@ hints = [
   "Discriminated Unionは共通のプロパティで型を識別します"
 ]
 tags = ["union", "types", "guards", "discriminated"]
-typeAssertions = [
-  "processValue: (value: string | number) => string | number",
-  "Result: type Result = { status: 'success'; data: string } | { status: 'error'; error: string } | { status: 'loading' }",
-  "handleResult: (result: Result) => void",
-  "processData: <T>(data: T[] | Record<string, T>) => number"
-]
+# 型推論要件
+[[typeAssertions]]
+symbol = "processValue"
+expectedType = "(value: string | number) => string | number"
+kind = "function"
+description = "Union型を受け取り処理する関数"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "Result"
+expectedType = "{ status: 'success'; data: string } | { status: 'error'; error: string } | { status: 'loading' }"
+kind = "property"
+description = "Discriminated Union型の定義"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "handleResult"
+expectedType = "(result: Result) => void"
+kind = "function"
+description = "Result型を処理する関数"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "processData"
+expectedType = "<T>(data: T[] | Record<string, T>) => number"
+kind = "function"
+description = "配列またはオブジェクトを処理する関数"
+comparisonMode = "structural"

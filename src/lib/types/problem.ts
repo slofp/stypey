@@ -157,6 +157,11 @@ export function isProblemCategory(value: unknown): value is ProblemCategory {
 export type TypeAssertionKind = 'variable' | 'function' | 'parameter' | 'return' | 'property';
 
 /**
+ * 型比較モード
+ */
+export type TypeComparisonMode = 'exact' | 'structural' | 'assignable';
+
+/**
  * 型推論要件定義
  */
 export interface TypeAssertion {
@@ -164,6 +169,9 @@ export interface TypeAssertion {
   readonly expectedType: string;    // 期待される型
   readonly kind: TypeAssertionKind; // シンボルの種類
   readonly description?: string;    // 説明（オプション）
+  readonly comparisonMode?: TypeComparisonMode; // 型比較モード（デフォルト: structural）
+  readonly allowSubtypes?: boolean; // サブタイプを許可するか（デフォルト: true）
+  readonly ignoreOptional?: boolean; // オプショナルプロパティを無視するか（デフォルト: false）
 }
 
 /**

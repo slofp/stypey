@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Problem, TypeAssertion } from '$types/problem';
   import { TypeChecker } from '$services/typeChecker';
-  import { ASTAnalyzer } from '$services/astAnalyzer';
+  import { AdvancedTypeChecker } from '$services/advancedTypeChecker';
   import { Button, Badge } from '$components/UI';
   
   interface Props {
@@ -55,15 +55,14 @@
       return;
     }
     
-    // AST解析で型推論要件を検証
+    // 高度な型チェッカーで検証
     try {
-      // AST解析で型情報を取得
-      const inferenceResult = await ASTAnalyzer.analyzeCode(userCode);
-      
-      // 型推論要件を検証
-      const validationResult = ASTAnalyzer.validateTypeAssertions(
-        inferenceResult,
-        problem.typeAssertions
+      const validationResult = await AdvancedTypeChecker.validateAssertions(
+        userCode,
+        problem.typeAssertions.map(a => ({
+          ...a,
+          comparisonMode: a.comparisonMode || 'structural'
+        }))
       );
       
       // 検証結果を表示用に変換
@@ -78,24 +77,33 @@
         
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        if (assertionResult.passed) {
+        if (assertionResult.result.matches) {
           testResult.status = 'passed';
           if (assertionResult.actualType) {
             testResult.actualType = assertionResult.actualType;
           }
         } else {
           testResult.status = 'failed';
-          testResult.error = assertionResult.message;
+          testResult.error = assertionResult.result.details || 'Type mismatch';
           if (assertionResult.actualType) {
             testResult.actualType = assertionResult.actualType;
           }
+          
+          // 詳細な差分情報を追加
+          if (assertionResult.result.differences) {
+            const diffs = assertionResult.result.differences
+              .map(d => `  ${d.path || 'root'}: ${d.reason}`)
+              .join('\n');
+            testResult.error += '\n' + diffs;
+          }
+          
           allPassed = false;
         }
         
         testResults = [...testResults];
       }
     } catch (err) {
-      // AST解析エラー
+      // 型解析エラー
       parseError = `型解析に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`;
       testResults = [];
       overallResult = 'failure';
@@ -400,27 +408,6 @@
     color: var(--text-primary);
   }
   
-  .expected-output {
-    margin-top: 1rem;
-  }
-  
-  .expected-output strong {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-  
-  .expected-output pre {
-    padding: 0.75rem;
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-light);
-    border-radius: 0.25rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    overflow-x: auto;
-    color: var(--text-primary);
-  }
   
   .no-tests,
   .test-list {

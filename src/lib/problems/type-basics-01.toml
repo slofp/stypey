@@ -104,9 +104,11 @@ symbol = "user"
 expectedType = "{id: number, name: string, email: string}"
 kind = "variable"
 description = "user は適切なオブジェクト型であること"
+comparisonMode = "structural"  # プロパティの順序を無視して構造的に比較
 
 [[typeAssertions]]
 symbol = "greet"
 expectedType = "(name: string) => string"
 kind = "function"
 description = "greet は string を受け取り string を返す関数であること"
+comparisonMode = "structural"  # 関数表記の違いを吸収

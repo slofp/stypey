@@ -19,6 +19,9 @@ export interface ProblemToml {
     expectedType: string;
     kind?: string;
     description?: string;
+    comparisonMode?: 'exact' | 'structural' | 'assignable';
+    allowSubtypes?: boolean;
+    ignoreOptional?: boolean;
   }>;
 }
 
@@ -45,6 +48,9 @@ export class ProblemParser {
           expectedType: assertion.expectedType,
           kind: assertion.kind || 'variable',
           ...(assertion.description !== undefined && { description: assertion.description }),
+          ...(assertion.comparisonMode !== undefined && { comparisonMode: assertion.comparisonMode }),
+          ...(assertion.allowSubtypes !== undefined && { allowSubtypes: assertion.allowSubtypes }),
+          ...(assertion.ignoreOptional !== undefined && { ignoreOptional: assertion.ignoreOptional }),
         }));
       
       const result: Problem = {

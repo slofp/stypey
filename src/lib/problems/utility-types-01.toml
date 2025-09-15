@@ -97,16 +97,80 @@ hints = [
   "Exclude<T, U> はUnion型から特定の型を除外します"
 ]
 tags = ["utility", "types", "transformation", "builtin"]
-typeAssertions = [
-  "User: interface User { id: number; name: string; email: string; age?: number; isActive: boolean; }",
-  "PartialUser: Partial<User>",
-  "RequiredUser: Required<User>",
-  "UserBasicInfo: Pick<User, 'id' | 'name' | 'email'>",
-  "UserWithoutStatus: Omit<User, 'isActive'>",
-  "ReadonlyUser: Readonly<User>",
-  "StringNumberMap: Record<string, number>",
-  "Status: 'pending' | 'success' | 'error' | 'cancelled'",
-  "ActiveStatus: Exclude<Status, 'cancelled'>",
-  "updateUser: (user: PartialUser) => void",
-  "createUser: (user: RequiredUser) => void"
-]
+# 型推論要件
+[[typeAssertions]]
+symbol = "User"
+expectedType = "interface User { id: number; name: string; email: string; age?: number; isActive: boolean; }"
+kind = "property"
+description = "基本となるUserインターフェース"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "PartialUser"
+expectedType = "Partial<User>"
+kind = "property"
+description = "すべてのプロパティをオプショナルにしたUser"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "RequiredUser"
+expectedType = "Required<User>"
+kind = "property"
+description = "すべてのプロパティを必須にしたUser"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "UserBasicInfo"
+expectedType = "Pick<User, 'id' | 'name' | 'email'>"
+kind = "property"
+description = "特定のプロパティのみを抽出したUser"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "UserWithoutStatus"
+expectedType = "Omit<User, 'isActive'>"
+kind = "property"
+description = "特定のプロパティを除外したUser"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "ReadonlyUser"
+expectedType = "Readonly<User>"
+kind = "property"
+description = "読み取り専用にしたUser"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "StringNumberMap"
+expectedType = "Record<string, number>"
+kind = "property"
+description = "文字列キーと数値値のマップ"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "Status"
+expectedType = "'pending' | 'success' | 'error' | 'cancelled'"
+kind = "property"
+description = "ステータスのUnion型"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "ActiveStatus"
+expectedType = "Exclude<Status, 'cancelled'>"
+kind = "property"
+description = "cancelledを除外したステータス"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "updateUser"
+expectedType = "(user: PartialUser) => void"
+kind = "function"
+description = "部分的なUserで更新する関数"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "createUser"
+expectedType = "(user: RequiredUser) => void"
+kind = "function"
+description = "完全なUserで作成する関数"
+comparisonMode = "assignable"

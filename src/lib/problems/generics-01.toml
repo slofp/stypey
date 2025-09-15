@@ -60,19 +60,83 @@ stack.push(1);
 stack.push(2);
 const num = stack.pop();
 """
-typeAssertions = [
-  "getFirst: <T>(arr: T[]) => T | undefined",
-  "logLength: <T extends { length: number }>(item: T) => T",
-  "KeyValuePair: interface KeyValuePair<K, V> { key: K; value: V; }",
-  "Stack: class Stack<T> { push(item: T): void; pop(): T | undefined; }",
-  "numbers: number | undefined",
-  "strings: string | undefined",
-  "strLength: string",
-  "arrLength: number[]",
-  "pair: KeyValuePair<string, string>",
-  "numberPair: KeyValuePair<number, number>",
-  "num: number | undefined"
-]
+# 型推論要件
+[[typeAssertions]]
+symbol = "getFirst"
+expectedType = "<T>(arr: T[]) => T | undefined"
+kind = "function"
+description = "ジェネリック関数の定義"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "logLength"
+expectedType = "<T extends { length: number }>(item: T) => T"
+kind = "function"
+description = "制約付きジェネリック関数"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "KeyValuePair"
+expectedType = "interface KeyValuePair<K, V> { key: K; value: V; }"
+kind = "property"
+description = "ジェネリックインターフェース"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "Stack"
+expectedType = "class Stack<T> { push(item: T): void; pop(): T | undefined; }"
+kind = "property"
+description = "ジェネリッククラス"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "numbers"
+expectedType = "number | undefined"
+kind = "variable"
+description = "getFirstの戻り値（数値配列）"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "strings"
+expectedType = "string | undefined"
+kind = "variable"
+description = "getFirstの戻り値（文字列配列）"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "strLength"
+expectedType = "string"
+kind = "variable"
+description = "logLengthの戻り値（文字列）"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "arrLength"
+expectedType = "number[]"
+kind = "variable"
+description = "logLengthの戻り値（数値配列）"
+comparisonMode = "structural"
+
+[[typeAssertions]]
+symbol = "pair"
+expectedType = "KeyValuePair<string, string>"
+kind = "variable"
+description = "文字列のkey-valueペア"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "numberPair"
+expectedType = "KeyValuePair<number, number>"
+kind = "variable"
+description = "数値のkey-valueペア"
+comparisonMode = "assignable"
+
+[[typeAssertions]]
+symbol = "num"
+expectedType = "number | undefined"
+kind = "variable"
+description = "Stackからpopした値"
+comparisonMode = "structural"
 solution = """
 // 1. ジェネリック関数を定義してください
 // 配列の最初の要素を返す関数
