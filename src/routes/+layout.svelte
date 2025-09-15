@@ -2,6 +2,7 @@
   import '../lib/styles/global.css';
   import '../lib/styles/animations.css';
   import { themeStore } from '$stores/theme.svelte';
+  import Header from '$lib/components/Header.svelte';
   import type { Snippet } from 'svelte';
   
   interface Props {
@@ -21,7 +22,10 @@
 </script>
 
 <div class="app">
-  {@render children()}
+  <Header />
+  <main class="main">
+    {@render children()}
+  </main>
 </div>
 
 <style>
@@ -31,6 +35,11 @@
     flex-direction: column;
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  
+  .main {
+    flex: 1;
+    width: 100%;
   }
 </style>

@@ -1,11 +1,5 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import EditorSettings from '$components/Editor/EditorSettings.svelte';
-  import { themeStore } from '$stores/theme.svelte';
-  
-  // アイコンを絵文字で代替
-  const IconSun = '☀️';
-  const IconMoon = '🌙';
   
   let editorValue = $state(`// TypeScript 型学習プラットフォーム「TypeMaster」へようこそ！
 // ここでTypeScriptの型システムを学習できます。
@@ -47,7 +41,6 @@ const doubled = numbers.map(n => n * 2);
 
 console.log(message, user, result, doubled);`);
   
-  let settingsOpen = $state(false);
   let MonacoEditor = $state<typeof import('$components/Editor/MonacoEditor.svelte').default | null>(null);
   
   // クライアントサイドでのみMonaco Editorを読み込み
@@ -66,12 +59,6 @@ console.log(message, user, result, doubled);`);
   function handleSave(value: string): void {
     console.log('保存されました:', value);
   }
-  
-  function toggleTheme(): void {
-    themeStore.toggle();
-  }
-  
-  const theme = $derived(themeStore.current);
 </script>
 
 <svelte:head>
@@ -80,33 +67,7 @@ console.log(message, user, result, doubled);`);
 </svelte:head>
 
 <div class="container">
-  <header class="header">
-    <div class="header-content">
-      <h1 class="logo">TypeMaster</h1>
-      <nav class="nav">
-        <a href="/" class="nav-link active">ホーム</a>
-        <a href="/problems" class="nav-link">問題一覧</a>
-        <a href="/progress" class="nav-link">進捗</a>
-      </nav>
-      <div class="header-actions">
-        <EditorSettings bind:isOpen={settingsOpen} />
-        <button
-          class="theme-toggle"
-          onclick={toggleTheme}
-          aria-label="テーマ切り替え"
-          title={theme === 'light' ? 'ダークモードに切り替え' : 'ライトモードに切り替え'}
-        >
-          {#if theme === 'light'}
-            <span>{IconMoon}</span>
-          {:else}
-            <span>{IconSun}</span>
-          {/if}
-        </button>
-      </div>
-    </div>
-  </header>
-  
-  <main class="main">
+  <div class="main">
     <div class="playground">
       <div class="playground-header">
         <h2 class="playground-title">TypeScript Playground</h2>
@@ -139,13 +100,7 @@ console.log(message, user, result, doubled);`);
         </p>
       </div>
     </div>
-  </main>
-  
-  <footer class="footer">
-    <p class="footer-text">
-      © 2024 TypeMaster - TypeScriptの型システムを楽しく学ぼう
-    </p>
-  </footer>
+  </div>
 </div>
 
 <style>
@@ -153,81 +108,6 @@ console.log(message, user, result, doubled);`);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-  }
-  
-  .header {
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-default);
-    padding: 1rem 0;
-  }
-  
-  .header-content {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .nav {
-    display: flex;
-    gap: 2rem;
-  }
-  
-  .nav-link {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: color 0.2s ease;
-    padding: 0.5rem 0;
-    border-bottom: 2px solid transparent;
-  }
-  
-  .nav-link:hover {
-    color: var(--text-primary);
-  }
-  
-  .nav-link.active {
-    color: var(--text-primary);
-    border-bottom-color: var(--accent-primary);
-  }
-  
-  .header-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 0.5rem;
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-default);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .theme-toggle:hover {
-    background-color: var(--bg-tertiary);
-    border-color: var(--border-dark);
   }
   
   .main {
@@ -241,7 +121,7 @@ console.log(message, user, result, doubled);`);
   .playground {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-default);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     overflow: hidden;
   }
   
@@ -329,28 +209,7 @@ console.log(message, user, result, doubled);`);
     font-size: 0.75rem;
   }
   
-  .footer {
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-default);
-    padding: 1.5rem 0;
-  }
-  
-  .footer-text {
-    text-align: center;
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-  
   @media (max-width: 768px) {
-    .nav {
-      display: none;
-    }
-    
-    .header-content {
-      padding: 0 1rem;
-    }
-    
     .main {
       padding: 1rem;
     }
