@@ -24,34 +24,34 @@ export interface ProblemToml {
 export class ProblemParser {
   static parseToml(content: string): Problem {
     try {
-      const parsed = parseToml(content) as unknown as ProblemToml;
+      const parsed = parseToml(content) as any;
       
-      if (!parsed.problem) {
-        throw new Error('Invalid TOML: missing "problem" section');
+      // Check if the structure is nested (with problem section) or flat
+      const problemData = parsed.problem || parsed;
+      
+      if (!problemData.id || !problemData.title) {
+        throw new Error('Invalid TOML: missing required fields (id, title)');
       }
       
-      const { problem } = parsed;
-      
-      const tests: ProblemTest[] = parsed.tests 
-        ? parsed.tests.map((test): ProblemTest => ({
-            input: test.input,
-            expected: test.expected,
-            ...(test.description !== undefined && { description: test.description }),
-          }))
-        : [];
+      const tests: ProblemTest[] = (parsed.tests || problemData.tests || [])
+        .map((test: any): ProblemTest => ({
+          input: test.input,
+          expected: test.expected,
+          ...(test.description !== undefined && { description: test.description }),
+        }));
       
       const result: Problem = {
-        id: problem.id,
-        title: problem.title,
-        description: problem.description,
-        difficulty: problem.difficulty,
-        category: problem.category as Problem['category'],
-        initialCode: problem.initialCode || '',
-        solution: problem.solution || '',
-        hints: problem.hints || [],
-        tags: problem.tags || [],
+        id: problemData.id,
+        title: problemData.title,
+        description: problemData.description || '',
+        difficulty: problemData.difficulty || 'easy',
+        category: (problemData.category || 'basics') as Problem['category'],
+        initialCode: problemData.initialCode || '',
+        solution: problemData.solution || '',
+        hints: problemData.hints || [],
+        tags: problemData.tags || [],
         tests,
-      }
+      };
       
       if (!isProblem(result)) {
         throw new Error('Parsed TOML does not match Problem schema');
