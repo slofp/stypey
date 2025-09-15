@@ -51,7 +51,7 @@ export class TypeChecker {
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       target: monaco.languages.typescript.ScriptTarget.ESNext,
       module: monaco.languages.typescript.ModuleKind.ESNext,
-      lib: ['ESNext', 'DOM', 'DOM.Iterable'],
+      // libオプションを削除してデフォルトのライブラリを使用
       
       // 学習用に緩和した設定
       strict: false,                         // strictモードを無効化
