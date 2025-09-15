@@ -75,6 +75,37 @@
       // Monacoインスタンスを保存
       monacoInstance = monaco;
       
+      // カスタムテーマを定義（選択色を見やすく）
+      monaco.editor.defineTheme('custom-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.selectionBackground': '#264f78',
+          'editor.selectionHighlightBackground': '#264f78aa',
+          'editor.inactiveSelectionBackground': '#264f7855',
+          'editor.wordHighlightBackground': '#264f7844',
+          'editor.wordHighlightStrongBackground': '#264f7866',
+          'editor.findMatchBackground': '#3a5d8f',
+          'editor.findMatchHighlightBackground': '#3a5d8f66'
+        }
+      });
+      
+      monaco.editor.defineTheme('custom-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.selectionBackground': '#add6ff',
+          'editor.selectionHighlightBackground': '#add6ffaa',
+          'editor.inactiveSelectionBackground': '#add6ff55',
+          'editor.wordHighlightBackground': '#add6ff44',
+          'editor.wordHighlightStrongBackground': '#add6ff66',
+          'editor.findMatchBackground': '#8fbfff',
+          'editor.findMatchHighlightBackground': '#8fbfff66'
+        }
+      });
+      
       // TypeScript設定
       monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: false,
@@ -131,7 +162,7 @@
         ...createMonacoOptions(settings),
         model: editorModel,
         readOnly,
-        theme: theme === 'dark' ? 'vs-dark' : 'vs',
+        theme: theme === 'dark' ? 'custom-dark' : 'custom-light',
         automaticLayout: true,
         minimap: {
           enabled: settings.minimap,
@@ -264,7 +295,7 @@
     const monaco = monacoInstance;
     if (currentEditor && monaco && theme) {
       console.log('Updating editor theme to:', theme);
-      monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
+      monaco.editor.setTheme(theme === 'dark' ? 'custom-dark' : 'custom-light');
     }
   });
   

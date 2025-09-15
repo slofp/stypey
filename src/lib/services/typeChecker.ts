@@ -77,8 +77,15 @@ export class TypeChecker {
   }
   
   static async checkCode(code: string, fileName: string = 'main.ts'): Promise<TypeCheckResult> {
+    // 自動初期化
     if (!this.monaco) {
-      throw new Error('TypeChecker not initialized. Call initialize() first.');
+      try {
+        const { setupMonacoEnvironment, monaco } = await import('$lib/components/Editor/MonacoWorker');
+        setupMonacoEnvironment();
+        this.initialize(monaco);
+      } catch (error) {
+        throw new Error('Failed to initialize TypeChecker: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
     }
     
     const result: TypeCheckResult = {
@@ -88,22 +95,25 @@ export class TypeChecker {
       inferredTypes: new Map(),
     };
     
+    // this.monacoは初期化済みなのでnon-nullと保証
+    const monaco = this.monaco!;
+    
     try {
       // ユニークなファイル名でURIを作成
       this.modelCounter++;
-      const uri = this.monaco.Uri.file(`/typecheck/${this.modelCounter}-${fileName}`);
+      const uri = monaco.Uri.file(`/typecheck/${this.modelCounter}-${fileName}`);
       
       // 既存のモデルがあれば破棄
-      const existingModel = this.monaco.editor.getModel(uri);
+      const existingModel = monaco.editor.getModel(uri);
       if (existingModel) {
         existingModel.dispose();
       }
       
       // 新しいモデルを作成
-      const model = this.monaco.editor.createModel(code, 'typescript', uri);
+      const model = monaco.editor.createModel(code, 'typescript', uri);
       
       // TypeScript Workerから診断情報を取得
-      const worker = await this.monaco.languages.typescript.getTypeScriptWorker();
+      const worker = await monaco.languages.typescript.getTypeScriptWorker();
       const client = await worker(model.uri);
       
       // セマンティック診断を取得
