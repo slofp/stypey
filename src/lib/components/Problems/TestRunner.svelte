@@ -39,16 +39,19 @@
       testResults = [...testResults];
       
       try {
-        // テストコードを組み立て
+        // ユーザーコードとテストコードを別スコープで実行
+        // 変数の重複を避けるため、ブロックスコープでラップ
         const testCode = `
 ${userCode}
 
 // Test case ${i + 1}
-${testResult.test.input}
+{
+  ${testResult.test.input}
+}
 `;
         
         // 型チェックを実行
-        const checkResult = await TypeChecker.checkCode(testCode);
+        const checkResult = await TypeChecker.checkCode(testCode, `test-${i + 1}.ts`);
         
         // エラーがあるかチェック
         if (checkResult.errors.length > 0) {

@@ -31,6 +31,23 @@
   --status-info: #2196f3;
 }
 
+/* Text selection styles */
+::selection {
+  background-color: rgba(33, 150, 243, 0.3);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(33, 150, 243, 0.3);
+  color: inherit;
+}
+
+/* Focus outlines */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
 [data-theme="dark"] {
   --bg-primary: #1a1a1a;
   --bg-secondary: #242424;
@@ -58,6 +75,17 @@
   --status-error: #ef5350;
   --status-warning: #ffa726;
   --status-info: #42a5f5;
+}
+
+/* Dark theme text selection */
+[data-theme="dark"] ::selection {
+  background-color: rgba(100, 181, 246, 0.3);
+  color: inherit;
+}
+
+[data-theme="dark"] ::-moz-selection {
+  background-color: rgba(100, 181, 246, 0.3);
+  color: inherit;
 }
 
 /* Body styles */
