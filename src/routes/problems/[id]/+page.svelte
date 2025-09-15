@@ -5,6 +5,7 @@
   import { progressStore } from '$stores/progress.svelte';
   import { Badge, Button } from '$components/UI';
   import TestRunner from '$components/Problems/TestRunner.svelte';
+  import { IconCheck, IconChevronDown, IconChevronRight } from '@tabler/icons-svelte';
   
   let { data }: { data: PageData } = $props();
   
@@ -15,6 +16,7 @@
   let showSolution = $state(false);
   let showHints = $state<number[]>([]);
   let testRunnerKey = $state(0);
+  let testPassed = $state(false);
   
   const isCompleted = $derived(progressStore.isProblemCompleted(problem.id));
   
@@ -53,6 +55,7 @@
   }
   
   function handleTestComplete(success: boolean, score: number): void {
+    testPassed = success;
     if (success) {
       progressStore.completeProblem(
         problem.id,
@@ -108,7 +111,9 @@
         <div class="problem-header">
           <h2 class="problem-title">
             {#if isCompleted}
-              <span class="completed-icon">✅</span>
+              <span class="completed-icon">
+                <IconCheck size={20} color="var(--status-success)" />
+              </span>
             {/if}
             {problem.title}
           </h2>
@@ -143,7 +148,12 @@
                     class="hint-toggle"
                     onclick={() => toggleHint(index)}
                   >
-                    {showHints.includes(index) ? '🔽' : '▶️'} ヒント {index + 1}
+                    {#if showHints.includes(index)}
+                      <IconChevronDown size={16} />
+                    {:else}
+                      <IconChevronRight size={16} />
+                    {/if}
+                    ヒント {index + 1}
                   </button>
                   {#if showHints.includes(index)}
                     <div class="hint-content">
@@ -160,20 +170,20 @@
           <Button variant="secondary" size="small" onclick={resetCode}>
             コードをリセット
           </Button>
-          {#if problem.solution}
+          {#if problem.solution && testPassed}
             <Button 
               variant="ghost" 
               size="small" 
               onclick={() => showSolution = !showSolution}
             >
-              {showSolution ? '解答を隠す' : '解答を見る'}
+              {showSolution ? '模範解答を隠す' : '模範解答を見る'}
             </Button>
           {/if}
         </div>
         
         {#if showSolution && problem.solution}
           <div class="solution-container">
-            <h3>解答例</h3>
+            <h3>模範解答</h3>
             <pre class="solution-code">{problem.solution}</pre>
           </div>
         {/if}
@@ -297,7 +307,9 @@
   }
   
   .completed-icon {
-    color: var(--success-text);
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5rem;
   }
   
   .problem-badges {

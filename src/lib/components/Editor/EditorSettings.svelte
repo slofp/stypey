@@ -1,11 +1,6 @@
 <script lang="ts">
   import { editorStore } from '$stores/editor.svelte';
-  // アイコンを絵文字で代替
-  const IconSettings = '⚙️';
-  const IconTextSize = '🔤';
-  const IconWrapText = '↩️';
-  const IconNumber = '#️⃣';
-  const IconMap = '🗺️';
+  import { IconSettings, IconTextSize, IconWrapText, IconHash, IconMap } from '@tabler/icons-svelte';
   
   interface Props {
     isOpen?: boolean;
@@ -64,7 +59,7 @@
     aria-label="エディタ設定"
     title="エディタ設定"
   >
-    <span>{IconSettings}</span>
+    <IconSettings size={20} />
   </button>
   
   {#if isOpen}
@@ -74,7 +69,7 @@
       <div class="settings-group">
         <div class="setting-item">
           <div class="setting-label">
-            <span>{IconTextSize}</span>
+            <IconTextSize size={16} />
             フォントサイズ
           </div>
           <div class="setting-control">
@@ -112,7 +107,7 @@
         
         <div class="setting-item">
           <div class="setting-label">
-            <span>{IconWrapText}</span>
+            <IconWrapText size={16} />
             折り返し
           </div>
           <div class="setting-control">
@@ -128,7 +123,7 @@
         
         <div class="setting-item">
           <div class="setting-label">
-            <span>{IconNumber}</span>
+            <IconHash size={16} />
             行番号
           </div>
           <div class="setting-control">
@@ -149,7 +144,7 @@
         
         <div class="setting-item">
           <div class="setting-label">
-            <span>{IconMap}</span>
+            <IconMap size={16} />
             ミニマップ
           </div>
           <div class="setting-control">

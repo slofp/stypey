@@ -2,12 +2,8 @@
   import { page } from '$app/stores';
   import { themeStore } from '$stores/theme.svelte';
   import EditorSettings from '$components/Editor/EditorSettings.svelte';
-  
-  // アイコンを絵文字で代替
-  const IconSun = '☀️';
-  const IconMoon = '🌙';
-  const IconCode = '💻';
-  const IconSettings = '⚙️';
+  import LogoIcon from '$components/UI/LogoIcon.svelte';
+  import { IconSun, IconMoon } from '@tabler/icons-svelte';
   
   let settingsOpen = $state(false);
   const theme = $derived(themeStore.current);
@@ -24,7 +20,7 @@
   <div class="header-container">
     <div class="header-left">
       <a href="/" class="logo">
-        <span class="logo-icon">{IconCode}</span>
+        <LogoIcon size={24} class="logo-icon" />
         <span class="logo-text">TypeMaster</span>
       </a>
       <nav class="nav">
@@ -48,9 +44,9 @@
         title={theme === 'light' ? 'ダークモードに切り替え' : 'ライトモードに切り替え'}
       >
         {#if theme === 'light'}
-          <span class="icon">{IconMoon}</span>
+          <IconMoon size={20} />
         {:else}
-          <span class="icon">{IconSun}</span>
+          <IconSun size={20} />
         {/if}
       </button>
     </div>
@@ -101,7 +97,7 @@
   }
   
   .logo-icon {
-    font-size: 1.5rem;
+    display: inline-block;
   }
   
   .logo-text {
@@ -165,9 +161,6 @@
     border-color: var(--border-dark);
   }
   
-  .icon {
-    font-size: 1.25rem;
-  }
   
   @media (max-width: 768px) {
     .header-container {

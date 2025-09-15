@@ -3,6 +3,7 @@
   import { TypeChecker } from '$services/typeChecker';
   import { AdvancedTypeChecker } from '$services/advancedTypeChecker';
   import { Button, Badge } from '$components/UI';
+  import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
   
   interface Props {
     problem: Problem;
@@ -140,13 +141,13 @@
     }
   }
   
-  function getStatusIcon(status: TestResult['status']): string {
+  function getStatusIcon(status: TestResult['status']) {
     switch (status) {
-      case 'pending': return '⏸';
-      case 'running': return '⚡';
-      case 'passed': return '✅';
-      case 'failed': return '❌';
-      default: return '❓';
+      case 'pending': return IconPlayerPause;
+      case 'running': return IconBolt;
+      case 'passed': return IconCheck;
+      case 'failed': return IconX;
+      default: return IconQuestionMark;
     }
   }
   
@@ -175,7 +176,9 @@
   
   {#if parseError}
     <div class="parse-error-container">
-      <div class="parse-error-icon">⚠️</div>
+      <div class="parse-error-icon">
+        <IconAlertTriangle size={48} color="var(--status-warning)" />
+      </div>
       <h3 class="parse-error-title">コードの解析に失敗しました</h3>
       <p class="parse-error-message">{parseError}</p>
       <p class="parse-error-hint">コードの構文を確認し、もう一度お試しください。</p>
@@ -186,7 +189,9 @@
         <div class="test-case {result.status}">
           <div class="test-header">
             <div class="test-info">
-              <span class="test-icon">{getStatusIcon(result.status)}</span>
+              <span class="test-icon">
+                <svelte:component this={getStatusIcon(result.status)} size={20} />
+              </span>
               <span class="test-name">
                 {result.assertion.symbol}
                 {#if result.assertion.description}
@@ -257,7 +262,9 @@
   
   {#if overallResult === 'success'}
     <div class="success-message">
-      <span class="success-icon">🎉</span>
+      <span class="success-icon">
+        <IconConfetti size={48} color="var(--status-success)" />
+      </span>
       <p>すべてのテストに合格しました！</p>
     </div>
   {:else if overallResult === 'failure'}

@@ -4,6 +4,7 @@
   import { Card, Badge } from '$components/UI';
   import type { Problem } from '$types/problem';
   import { ProblemLoader } from '$services/problemLoader';
+  import { IconTrophy, IconChartBar, IconFlame, IconCheck } from '@tabler/icons-svelte';
   
   const progress = $derived(progressStore.progress);
   const completed = $derived(progressStore.completed);
@@ -74,7 +75,9 @@
     <div class="stats-grid">
       <Card class="stat-card">
         <div class="stat-content">
-          <div class="stat-icon">🏆</div>
+          <div class="stat-icon">
+            <IconTrophy size={40} color="var(--accent-primary)" />
+          </div>
           <div class="stat-info">
             <p class="stat-label">総スコア</p>
             <p class="stat-value">{progress.totalScore.toLocaleString()}</p>
@@ -84,7 +87,9 @@
       
       <Card class="stat-card">
         <div class="stat-content">
-          <div class="stat-icon">📊</div>
+          <div class="stat-icon">
+            <IconChartBar size={40} color="var(--accent-secondary)" />
+          </div>
           <div class="stat-info">
             <p class="stat-label">レベル</p>
             <p class="stat-value">{progress.level}</p>
@@ -103,7 +108,9 @@
       
       <Card class="stat-card">
         <div class="stat-content">
-          <div class="stat-icon">🔥</div>
+          <div class="stat-icon">
+            <IconFlame size={40} color="var(--status-warning)" />
+          </div>
           <div class="stat-info">
             <p class="stat-label">連続日数</p>
             <p class="stat-value">{progress.streakDays}日</p>
@@ -113,7 +120,9 @@
       
       <Card class="stat-card">
         <div class="stat-content">
-          <div class="stat-icon">✅</div>
+          <div class="stat-icon">
+            <IconCheck size={40} color="var(--status-success)" />
+          </div>
           <div class="stat-info">
             <p class="stat-label">完了率</p>
             <p class="stat-value">{completionRate()}%</p>
@@ -303,7 +312,9 @@
   }
   
   .stat-icon {
-    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .stat-info {
