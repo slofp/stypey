@@ -538,7 +538,7 @@ export class AdvancedTypeChecker {
       case 'type-alias':
         return this.compareTypeAlias(expected, actual);
       default:
-        return { matches: false, mode, details: 'Unknown comparison mode' };
+        return { matches: false, mode, details: '不明な比較モードです' };
     }
   }
   
@@ -575,8 +575,8 @@ export class AdvancedTypeChecker {
       ...structuralResult,
       mode: 'type-alias',
       details: structuralResult.matches 
-        ? 'Types are structurally equivalent (alias name did not match)'
-        : `Expected type alias '${expected.raw}' but got '${actual.aliasName || actual.raw}'`
+        ? '型は構造的に等価です（エイリアス名は一致しませんでした）'
+        : `期待される型エイリアス: '${expected.raw}' 実際: '${actual.aliasName || actual.raw}'`
     };
   }
   
@@ -588,7 +588,7 @@ export class AdvancedTypeChecker {
     return {
       matches,
       mode: 'exact',
-      details: matches ? 'Types match exactly' : `Expected "${expected.normalized}" but got "${actual.normalized}"`
+      details: matches ? '型が完全に一致します' : `期待値: "${expected.normalized}" 実際: "${actual.normalized}"`
     };
   }
   
@@ -607,7 +607,7 @@ export class AdvancedTypeChecker {
     const result: ComparisonResult = {
       matches,
       mode: 'structural',
-      details: matches ? 'Types are structurally equivalent' : 'Types differ structurally',
+      details: matches ? '型は構造的に等価です' : '型が構造的に異なります',
       ...(differences.length > 0 && { differences })
     };
     
@@ -639,7 +639,7 @@ export class AdvancedTypeChecker {
         path,
         expected: expected.kind,
         actual: actual.kind,
-        reason: 'Type kinds do not match'
+        reason: '型の種類が一致しません'
       });
       return false;
     }
@@ -656,7 +656,7 @@ export class AdvancedTypeChecker {
             path,
             expected: expected.base || '',
             actual: actual.base || '',
-            reason: 'Primitive types do not match'
+            reason: 'プリミティブ型が一致しません'
           });
           return false;
         }
@@ -668,7 +668,7 @@ export class AdvancedTypeChecker {
             path,
             expected: String(expected.value),
             actual: String(actual.value),
-            reason: 'Literal values do not match'
+            reason: 'リテラル値が一致しません'
           });
           return false;
         }
@@ -694,7 +694,7 @@ export class AdvancedTypeChecker {
             path,
             expected: `tuple of length ${expected.types.length}`,
             actual: `tuple of length ${actual.types.length}`,
-            reason: 'Tuple lengths do not match'
+            reason: 'タプルの長さが一致しません'
           });
           return false;
         }
@@ -723,7 +723,7 @@ export class AdvancedTypeChecker {
               path: `${path}.${key}`,
               expected: 'property exists',
               actual: 'property missing',
-              reason: `Property "${key}" is missing`
+              reason: `プロパティ "${key}" が不足しています`
             });
             return false;
           }
@@ -739,7 +739,7 @@ export class AdvancedTypeChecker {
               path: `${path}.${key}`,
               expected: 'no property',
               actual: 'property exists',
-              reason: `Unexpected property "${key}"`
+              reason: `予期しないプロパティ "${key}" があります`
             });
             // Note: This might be acceptable in structural typing
             // For now, we'll allow extra properties
@@ -757,7 +757,7 @@ export class AdvancedTypeChecker {
               path: `${path}(params)`,
               expected: `${expected.parameters.length} parameters`,
               actual: `${actual.parameters.length} parameters`,
-              reason: 'Parameter count mismatch'
+              reason: '引数の数が一致しません'
             });
             return false;
           }
@@ -806,7 +806,7 @@ export class AdvancedTypeChecker {
               path,
               expected: 'union member match',
               actual: 'no match',
-              reason: 'Union member does not match any expected type'
+              reason: 'Union型のメンバーが期待される型と一致しません'
             });
             return false;
           }
@@ -833,7 +833,7 @@ export class AdvancedTypeChecker {
               path,
               expected: 'intersection member',
               actual: 'missing',
-              reason: 'Intersection is missing required type'
+              reason: 'Intersection型に必要な型が不足しています'
             });
             return false;
           }
@@ -847,7 +847,7 @@ export class AdvancedTypeChecker {
             path,
             expected: expected.base || '',
             actual: actual.base || '',
-            reason: 'Generic base types do not match'
+            reason: 'ジェネリックの基本型が一致しません'
           });
           return false;
         }
@@ -858,7 +858,7 @@ export class AdvancedTypeChecker {
               path,
               expected: `${expected.parameters.length} type parameters`,
               actual: `${actual.parameters.length} type parameters`,
-              reason: 'Type parameter count mismatch'
+              reason: '型パラメータの数が一致しません'
             });
             return false;
           }
@@ -896,7 +896,7 @@ export class AdvancedTypeChecker {
     const result: ComparisonResult = {
       matches,
       mode: 'assignable',
-      details: matches ? 'Type is assignable' : 'Type is not assignable',
+      details: matches ? '型は代入可能です' : '型は代入できません',
       ...(differences.length > 0 && { differences })
     };
     
@@ -994,7 +994,7 @@ export class AdvancedTypeChecker {
           result: {
             matches: false,
             mode: assertion.comparisonMode || 'structural',
-            details: `Symbol "${assertion.symbol}" not found in code`
+            details: `シンボル "${assertion.symbol}" がコード内に見つかりません`
           }
         });
         continue;

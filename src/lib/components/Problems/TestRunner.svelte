@@ -84,7 +84,7 @@
           }
         } else {
           testResult.status = 'failed';
-          testResult.error = assertionResult.result.details || 'Type mismatch';
+          testResult.error = assertionResult.result.details || '型が一致しません';
           if (assertionResult.actualType) {
             testResult.actualType = assertionResult.actualType;
           }
@@ -92,7 +92,7 @@
           // 詳細な差分情報を追加
           if (assertionResult.result.differences) {
             const diffs = assertionResult.result.differences
-              .map(d => `  ${d.path || 'root'}: ${d.reason}`)
+              .map(d => `  ${d.path || 'ルート'}: ${d.reason}`)
               .join('\n');
             testResult.error += '\n' + diffs;
           }
