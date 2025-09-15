@@ -161,6 +161,21 @@ export interface ProblemTest {
 }
 
 /**
+ * 型推論要件の種別
+ */
+export type TypeAssertionKind = 'variable' | 'function' | 'parameter' | 'return' | 'property';
+
+/**
+ * 型推論要件定義
+ */
+export interface TypeAssertion {
+  readonly symbol: string;          // 検証対象のシンボル名
+  readonly expectedType: string;    // 期待される型
+  readonly kind: TypeAssertionKind; // シンボルの種類
+  readonly description?: string;    // 説明（オプション）
+}
+
+/**
  * 問題定義（簡易版）
  */
 export interface Problem {
@@ -174,6 +189,7 @@ export interface Problem {
   readonly hints: ReadonlyArray<string>;
   readonly tags: ReadonlyArray<string>;
   readonly tests: ReadonlyArray<ProblemTest>;
+  readonly typeAssertions?: ReadonlyArray<TypeAssertion>; // 型推論要件
 }
 
 /**

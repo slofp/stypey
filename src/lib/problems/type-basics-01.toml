@@ -68,6 +68,44 @@ hints = [
 ]
 tags = ["basics", "types", "annotations"]
 
+# 型推論要件
+[[typeAssertions]]
+symbol = "userName"
+expectedType = "string"
+kind = "variable"
+description = "userName は string 型であること"
+
+[[typeAssertions]]
+symbol = "userAge"
+expectedType = "number"
+kind = "variable"
+description = "userAge は number 型であること"
+
+[[typeAssertions]]
+symbol = "isActive"
+expectedType = "boolean"
+kind = "variable"
+description = "isActive は boolean 型であること"
+
+[[typeAssertions]]
+symbol = "numbers"
+expectedType = "number[]"
+kind = "variable"
+description = "numbers は number[] 型であること"
+
+[[typeAssertions]]
+symbol = "words"
+expectedType = "string[]"
+kind = "variable"
+description = "words は string[] 型であること"
+
+[[typeAssertions]]
+symbol = "greet"
+expectedType = "(name: string) => string"
+kind = "function"
+description = "greet は string を受け取り string を返す関数であること"
+
+# 従来のテスト（後方互換性のため残す）
 [[tests]]
 input = "const test: string = 'hello';"
 expected = "valid"

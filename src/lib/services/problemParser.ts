@@ -1,5 +1,5 @@
 import { parse as parseToml } from 'smol-toml';
-import type { Problem, ProblemTest } from '$types/problem';
+import type { Problem, ProblemTest, TypeAssertion } from '$types/problem';
 import { isProblem } from '$types/problem';
 
 export interface ProblemToml {
@@ -44,6 +44,15 @@ export class ProblemParser {
           ...(test.description !== undefined && { description: test.description }),
         }));
       
+      // 型推論要件をパース
+      const typeAssertions: TypeAssertion[] = (parsed.typeAssertions || [])
+        .map((assertion: any): TypeAssertion => ({
+          symbol: assertion.symbol,
+          expectedType: assertion.expectedType,
+          kind: assertion.kind || 'variable',
+          ...(assertion.description !== undefined && { description: assertion.description }),
+        }));
+      
       const result: Problem = {
         id: problemData.id,
         title: problemData.title,
@@ -55,6 +64,7 @@ export class ProblemParser {
         hints: problemData.hints || [],
         tags: problemData.tags || [],
         tests,
+        ...(typeAssertions.length > 0 && { typeAssertions }),
       };
       
       if (!isProblem(result)) {

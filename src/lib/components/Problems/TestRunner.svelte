@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Problem, ProblemTest } from '$types/problem';
   import { TypeChecker } from '$services/typeChecker';
+  import { ASTAnalyzer } from '$services/astAnalyzer';
   import { Button, Badge } from '$components/UI';
   
   interface Props {
@@ -31,17 +32,86 @@
     
     let allPassed = true;
     
-    for (let i = 0; i < problem.tests.length; i++) {
-      const testResult = testResults[i];
-      if (!testResult) continue;
-      
-      testResult.status = 'running';
+    // まず構文エラーがないかチェック
+    try {
+      const syntaxCheck = await TypeChecker.checkCode(userCode, 'syntax-check.ts');
+      if (syntaxCheck.errors.length > 0) {
+        // 構文エラーがある場合は全てのテストを失敗にする
+        for (const testResult of testResults) {
+          testResult.status = 'failed';
+          testResult.error = syntaxCheck.errors[0]?.message || '構文エラーがあります';
+        }
+        testResults = [...testResults];
+        overallResult = 'failure';
+        isRunning = false;
+        return;
+      }
+    } catch (err) {
+      // エラー処理
+      for (const testResult of testResults) {
+        testResult.status = 'failed';
+        testResult.error = '型チェックに失敗しました';
+      }
       testResults = [...testResults];
-      
+      overallResult = 'failure';
+      isRunning = false;
+      return;
+    }
+    
+    // 型推論要件がある場合はAST解析を実行
+    if (problem.typeAssertions && problem.typeAssertions.length > 0) {
       try {
-        // ユーザーコードとテストコードを別スコープで実行
-        // 変数の重複を避けるため、ブロックスコープでラップ
-        const testCode = `
+        // AST解析で型情報を取得
+        const inferenceResult = await ASTAnalyzer.analyzeCode(userCode);
+        
+        // 型推論要件を検証
+        const validationResult = ASTAnalyzer.validateTypeAssertions(
+          inferenceResult,
+          problem.typeAssertions
+        );
+        
+        // 検証結果を表示用に変換
+        for (let i = 0; i < Math.min(validationResult.results.length, testResults.length); i++) {
+          const testResult = testResults[i];
+          const assertionResult = validationResult.results[i];
+          
+          if (!testResult || !assertionResult) continue;
+          
+          testResult.status = 'running';
+          testResults = [...testResults];
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          if (assertionResult.passed) {
+            testResult.status = 'passed';
+          } else {
+            testResult.status = 'failed';
+            testResult.error = assertionResult.message;
+            allPassed = false;
+          }
+          
+          testResults = [...testResults];
+        }
+      } catch (err) {
+        // AST解析エラー
+        for (const testResult of testResults) {
+          testResult.status = 'failed';
+          testResult.error = 'AST解析に失敗しました';
+          allPassed = false;
+        }
+        testResults = [...testResults];
+      }
+    } else {
+      // 従来のテスト方式（後方互換性のため残す）
+      for (let i = 0; i < problem.tests.length; i++) {
+        const testResult = testResults[i];
+        if (!testResult) continue;
+        
+        testResult.status = 'running';
+        testResults = [...testResults];
+        
+        try {
+          const testCode = `
 ${userCode}
 
 // Test case ${i + 1}
@@ -49,30 +119,25 @@ ${userCode}
   ${testResult.test.input}
 }
 `;
-        
-        // 型チェックを実行
-        const checkResult = await TypeChecker.checkCode(testCode, `test-${i + 1}.ts`);
-        
-        // エラーがあるかチェック
-        if (checkResult.errors.length > 0) {
+          
+          const checkResult = await TypeChecker.checkCode(testCode, `test-${i + 1}.ts`);
+          
+          if (checkResult.errors.length > 0) {
+            testResult.status = 'failed';
+            testResult.error = checkResult.errors[0]?.message || '型エラーがあります';
+            allPassed = false;
+          } else {
+            testResult.status = 'passed';
+          }
+        } catch (err) {
           testResult.status = 'failed';
-          testResult.error = checkResult.errors[0]?.message || '型エラーがあります';
+          testResult.error = err instanceof Error ? err.message : 'テストの実行に失敗しました';
           allPassed = false;
-        } else {
-          // 期待される結果と比較（簡易版）
-          // 実際にはもっと高度な検証が必要
-          testResult.status = 'passed';
         }
-      } catch (err) {
-        testResult.status = 'failed';
-        testResult.error = err instanceof Error ? err.message : 'テストの実行に失敗しました';
-        allPassed = false;
+        
+        testResults = [...testResults];
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
-      
-      testResults = [...testResults];
-      
-      // 少し遅延を入れてアニメーション効果を演出
-      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     overallResult = allPassed ? 'success' : 'failure';
