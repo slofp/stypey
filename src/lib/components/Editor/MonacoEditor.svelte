@@ -114,15 +114,13 @@
         noPropertyAccessFromIndexSignature: true,
       });
       
-      // モデルの作成または取得
-      const modelUri = monaco.Uri.parse(`typescript://main-${Date.now()}.ts`);
-      let editorModel = monaco.editor.getModel(modelUri);
-      
-      if (!editorModel) {
-        editorModel = monaco.editor.createModel(value, language, modelUri);
-      } else {
-        editorModel.setValue(value);
+      // モデルの作成（既存のモデルがあれば破棄）
+      if (model) {
+        model.dispose();
       }
+      
+      // 新しいモデルを作成（URIは省略してMonacoに自動生成させる）
+      const editorModel = monaco.editor.createModel(value, language);
       
       // モデルをstateに保存
       model = editorModel;

@@ -1,4 +1,4 @@
-import { parse as parseToml } from '@toml-tools/parser';
+import { parse as parseToml } from 'smol-toml';
 import type { Problem, ProblemTest } from '$types/problem';
 import { isProblem } from '$types/problem';
 
@@ -26,14 +26,18 @@ export class ProblemParser {
     try {
       const parsed = parseToml(content) as any;
       
-      // Check if the structure is nested (with problem section) or flat
-      const problemData = parsed.problem || parsed;
+      // smol-toml correctly parses TOML with sections
+      if (!parsed.problem) {
+        throw new Error('Invalid TOML: missing "problem" section');
+      }
+      
+      const problemData = parsed.problem;
       
       if (!problemData.id || !problemData.title) {
         throw new Error('Invalid TOML: missing required fields (id, title)');
       }
       
-      const tests: ProblemTest[] = (parsed.tests || problemData.tests || [])
+      const tests: ProblemTest[] = (parsed.tests || [])
         .map((test: any): ProblemTest => ({
           input: test.input,
           expected: test.expected,
