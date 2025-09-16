@@ -411,7 +411,7 @@
   }
   
   .test-details[open] .assertion-details {
-    animation: slideInDown 0.3s ease-out;
+    animation: fadeIn 0.2s ease-out;
   }
   
   .assertion-details {
@@ -419,6 +419,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    transform-origin: top;
   }
   
   .detail-row {

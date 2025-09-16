@@ -31,8 +31,8 @@
   <main class="main">
     {#key pathname}
       <div
-        in:fly={{ y: 10, duration: 300, delay: 100 }}
-        out:fade={{ duration: 200 }}
+        in:fly={{ y: 5, duration: 200 }}
+        out:fade={{ duration: 150 }}
         class="page-transition"
       >
         {@render children()}
