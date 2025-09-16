@@ -221,7 +221,7 @@ export class AdvancedTypeChecker {
         // Pattern 2: Full type definition extraction
         const patterns = [
           /(?:const|let|var)\s+\w+\s*:\s*([\s\S]+)/,
-          /function\s+\w+(\([^)]*\)(?:\s*:\s*[\s\S]+)?)/,
+          /^function\s+\w+(\([^)]*\)(?:\s*:\s*[\s\S]+)?)/,  // Match function declaration
           /(?:interface|type)\s+\w+\s*([\s\S]+)/
         ];
         
@@ -531,12 +531,18 @@ export class AdvancedTypeChecker {
       .replace(/\s*\(\+\d+\s+overloads?\)/g, '')
       .trim();
     
-    // Normalize function syntax - handle all formats in one pass
-    // Convert both (params): returnType and (params)=>returnType to (params) => returnType
-    normalized = normalized.replace(/(\([^)]*\))(?:\s*:\s*|\s*=>\s*)([^,}]+)/g, '$1 => $2');
-    
-    // Remove 'function' keyword prefix
-    normalized = normalized.replace(/^function\s+/, '');
+    // Handle function declaration syntax specially
+    // Convert "function name(params): returnType" to "(params) => returnType"
+    if (normalized.startsWith('function ')) {
+      const funcMatch = normalized.match(/^function\s+\w+\s*(\([^)]*\))(?:\s*:\s*(.+))?/);
+      if (funcMatch) {
+        normalized = funcMatch[1] + ' => ' + (funcMatch[2] || 'void');
+      }
+    } else {
+      // Normal function type normalization
+      // Convert (params): returnType to (params) => returnType
+      normalized = normalized.replace(/(\([^)]*\))\s*:\s*([^,}]+)/g, '$1 => $2');
+    }
     
     // Remove trailing commas
     normalized = normalized.replace(/,(\s*[}\]])/g, '$1');

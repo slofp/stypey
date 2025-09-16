@@ -3,6 +3,7 @@
   import { TypeChecker } from '$services/typeChecker';
   import { AdvancedTypeChecker } from '$services/advancedTypeChecker';
   import { Button, Badge } from '$components/UI';
+  import { slide } from 'svelte/transition';
   import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
   
   interface Props {
@@ -25,11 +26,13 @@
   let overallResult = $state<'idle' | 'running' | 'success' | 'failure'>('idle');
   let parseError = $state<string | null>(null);
   let testRunnerElement: HTMLDivElement | undefined;
+  let showDetails = $state<Set<number>>(new Set());
   
   async function runTests() {
     isRunning = true;
     overallResult = 'running';
     parseError = null;
+    showDetails = new Set();  // 詳細表示をリセット
     testResults = problem.typeAssertions.map(assertion => ({
       assertion,
       status: 'pending'
@@ -170,6 +173,16 @@
       default: return 'default';
     }
   }
+  
+  function toggleDetails(index: number): void {
+    const newSet = new Set(showDetails);
+    if (newSet.has(index)) {
+      newSet.delete(index);
+    } else {
+      newSet.add(index);
+    }
+    showDetails = newSet;
+  }
 </script>
 
 <div class="test-runner" bind:this={testRunnerElement}>
@@ -223,29 +236,33 @@
             </div>
           {/if}
           
-          <details class="test-details">
-            <summary>詳細を表示</summary>
-            <div class="assertion-details">
-              <div class="detail-row">
-                <span class="detail-label">シンボル:</span>
-                <span class="detail-value">{result.assertion.symbol}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">種類:</span>
-                <span class="detail-value">{result.assertion.kind}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">期待される型:</span>
-                <pre class="type-value">{result.assertion.expectedType}</pre>
-              </div>
-              {#if result.actualType}
+          <div class="test-details">
+            <button class="test-details-toggle" onclick={() => toggleDetails(index)}>
+              詳細を表示
+            </button>
+            {#if showDetails.has(index)}
+              <div class="assertion-details" transition:slide={{ duration: 200 }}>
                 <div class="detail-row">
-                  <span class="detail-label">実際の型:</span>
-                  <pre class="type-value">{result.actualType}</pre>
+                  <span class="detail-label">シンボル:</span>
+                  <span class="detail-value">{result.assertion.symbol}</span>
                 </div>
-              {/if}
-            </div>
-          </details>
+                <div class="detail-row">
+                  <span class="detail-label">種類:</span>
+                  <span class="detail-value">{result.assertion.kind}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">期待される型:</span>
+                  <pre class="type-value">{result.assertion.expectedType}</pre>
+                </div>
+                {#if result.actualType}
+                  <div class="detail-row">
+                    <span class="detail-label">実際の型:</span>
+                    <pre class="type-value">{result.actualType}</pre>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
         </div>
       {/each}
     </div>
@@ -398,20 +415,21 @@
     margin-top: 1rem;
   }
   
-  .test-details summary {
+  .test-details-toggle {
     cursor: pointer;
     font-size: 0.875rem;
     color: var(--text-secondary);
     user-select: none;
     transition: color 0.2s ease;
+    background: none;
+    border: none;
+    padding: 0.25rem 0;
+    text-align: left;
+    width: 100%;
   }
   
-  .test-details summary:hover {
+  .test-details-toggle:hover {
     color: var(--text-primary);
-  }
-  
-  .test-details[open] .assertion-details {
-    animation: fadeIn 0.2s ease-out;
   }
   
   .assertion-details {

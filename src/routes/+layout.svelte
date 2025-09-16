@@ -3,7 +3,7 @@
   import '../lib/styles/animations.css';
   import { themeStore } from '$stores/theme.svelte';
   import { page } from '$app/stores';
-  import { fade, fly } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import Header from '$lib/components/Header.svelte';
   import type { Snippet } from 'svelte';
   
@@ -31,8 +31,7 @@
   <main class="main">
     {#key pathname}
       <div
-        in:fly={{ y: 5, duration: 200 }}
-        out:fade={{ duration: 150 }}
+        transition:fade={{ duration: 100 }}
         class="page-transition"
       >
         {@render children()}
