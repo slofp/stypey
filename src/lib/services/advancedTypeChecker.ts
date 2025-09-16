@@ -531,8 +531,15 @@ export class AdvancedTypeChecker {
       .replace(/\s*\(\+\d+\s+overloads?\)/g, '')
       .trim();
     
-    // Normalize function syntax
+    // Normalize function syntax - handle both formats
+    // Convert (params): returnType to (params) => returnType
     normalized = normalized.replace(/(\([^)]*\)):\s*([^,}]+)/g, '$1 => $2');
+    
+    // Also ensure arrow functions are in consistent format
+    // Convert (params)=>returnType to (params) => returnType (add spaces)
+    normalized = normalized.replace(/(\([^)]*\))=>\s*/g, '$1 => ');
+    
+    // Remove 'function' keyword prefix
     normalized = normalized.replace(/^function\s+/, '');
     
     // Remove trailing commas
