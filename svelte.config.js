@@ -7,6 +7,14 @@ const config = {
   // for more information about preprocessors
   preprocess: vitePreprocess(),
 
+  vitePlugin: {
+    dynamicCompileOptions({ filename }) {
+      if (filename.includes('node_modules')) {
+        return { runes: undefined } // or false, check what works
+      }
+    }
+  },
+
   kit: {
     adapter: adapter({
       pages: 'build',
