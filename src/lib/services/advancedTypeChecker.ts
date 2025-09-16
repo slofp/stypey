@@ -543,7 +543,7 @@ export class AdvancedTypeChecker {
     // Always normalize function type notation
     // Convert (params): returnType to (params) => returnType
     // This handles both function expressions and type annotations
-    normalized = normalized.replace(/^(\([^)]*\))\s*:\s*([^,}]+)$/g, '$1 => $2');
+    normalized = normalized.replace(/(\([^)]*\))\s*:\s*(.+?)(?:$|,|})/g, '$1 => $2');
     
     // Remove trailing commas
     normalized = normalized.replace(/,(\s*[}\]])/g, '$1');
@@ -1038,7 +1038,7 @@ export class AdvancedTypeChecker {
       results.push({
         assertion,
         result,
-        actualType: actualType.raw
+        actualType: actualType.normalized  // 正規化された型を表示用に使用
       });
     }
     
