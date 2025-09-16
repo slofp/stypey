@@ -2,6 +2,8 @@
   import '../lib/styles/global.css';
   import '../lib/styles/animations.css';
   import { themeStore } from '$stores/theme.svelte';
+  import { page } from '$app/stores';
+  import { fade, fly } from 'svelte/transition';
   import Header from '$lib/components/Header.svelte';
   import type { Snippet } from 'svelte';
   
@@ -14,6 +16,9 @@
   // テーマの初期化と監視
   const theme = $derived(themeStore.current);
   
+  // ページ遷移のキー
+  const pathname = $derived($page.url.pathname);
+  
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', theme);
@@ -24,7 +29,15 @@
 <div class="app">
   <Header />
   <main class="main">
-    {@render children()}
+    {#key pathname}
+      <div
+        in:fly={{ y: 10, duration: 300, delay: 100 }}
+        out:fade={{ duration: 200 }}
+        class="page-transition"
+      >
+        {@render children()}
+      </div>
+    {/key}
   </main>
 </div>
 
@@ -41,5 +54,10 @@
   .main {
     flex: 1;
     width: 100%;
+  }
+  
+  .page-transition {
+    width: 100%;
+    height: 100%;
   }
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
+  import { slide } from 'svelte/transition';
   import type { PageData } from './$types';
   import { progressStore } from '$stores/progress.svelte';
   import { Badge, Button } from '$components/UI';
@@ -148,15 +149,13 @@
                     class="hint-toggle"
                     onclick={() => toggleHint(index)}
                   >
-                    {#if showHints.includes(index)}
-                      <IconChevronDown size={16} />
-                    {:else}
+                    <span class="hint-icon" class:expanded={showHints.includes(index)}>
                       <IconChevronRight size={16} />
-                    {/if}
+                    </span>
                     ヒント {index + 1}
                   </button>
                   {#if showHints.includes(index)}
-                    <div class="hint-content">
+                    <div class="hint-content" transition:slide={{ duration: 300 }}>
                       {hint}
                     </div>
                   {/if}
@@ -377,6 +376,16 @@
     background-color: var(--bg-secondary);
     border-color: var(--border-dark);
     transform: translateX(2px);
+  }
+  
+  .hint-icon {
+    display: inline-flex;
+    align-items: center;
+    transition: transform 0.3s ease;
+  }
+  
+  .hint-icon.expanded {
+    transform: rotate(90deg);
   }
   
   .hint-content {

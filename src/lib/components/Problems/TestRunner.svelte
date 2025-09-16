@@ -24,6 +24,7 @@
   let testResults = $state<TestResult[]>([]);
   let overallResult = $state<'idle' | 'running' | 'success' | 'failure'>('idle');
   let parseError = $state<string | null>(null);
+  let testRunnerElement: HTMLDivElement | undefined;
   
   async function runTests() {
     isRunning = true;
@@ -33,6 +34,16 @@
       assertion,
       status: 'pending'
     }));
+    
+    // テスト結果セクションまで自動スクロール
+    if (testRunnerElement) {
+      setTimeout(() => {
+        testRunnerElement?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start'
+        });
+      }, 100);
+    }
     
     let allPassed = true;
     
@@ -161,7 +172,7 @@
   }
 </script>
 
-<div class="test-runner">
+<div class="test-runner" bind:this={testRunnerElement}>
   <div class="runner-header">
     <h3 class="runner-title">テストケース</h3>
     <Button
@@ -189,7 +200,7 @@
         <div class="test-case {result.status}">
           <div class="test-header">
             <div class="test-info">
-              <span class="test-icon">
+              <span class="test-icon {result.status}">
                 <svelte:component this={getStatusIcon(result.status)} size={20} />
               </span>
               <span class="test-name">
@@ -341,6 +352,25 @@
   
   .test-icon {
     font-size: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .test-icon.pending {
+    color: var(--text-tertiary);
+  }
+  
+  .test-icon.running {
+    color: var(--info);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  .test-icon.passed {
+    color: var(--status-success);
+  }
+  
+  .test-icon.failed {
+    color: var(--status-error);
   }
   
   .test-name {
@@ -373,10 +403,15 @@
     font-size: 0.875rem;
     color: var(--text-secondary);
     user-select: none;
+    transition: color 0.2s ease;
   }
   
   .test-details summary:hover {
     color: var(--text-primary);
+  }
+  
+  .test-details[open] .assertion-details {
+    animation: slideInDown 0.3s ease-out;
   }
   
   .assertion-details {
