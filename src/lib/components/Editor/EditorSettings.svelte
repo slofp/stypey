@@ -1,6 +1,6 @@
 <script lang="ts">
   import { editorStore } from '$stores/editor.svelte';
-  import { IconSettings, IconTextSize, IconWrapText, IconHash, IconMap } from '@tabler/icons-svelte';
+  import { IconSettings, IconTextSize, IconTextWrap, IconHash, IconMap } from '@tabler/icons-svelte';
   
   interface Props {
     isOpen?: boolean;
@@ -107,7 +107,7 @@
         
         <div class="setting-item">
           <div class="setting-label">
-            <IconWrapText size={16} />
+            <IconTextWrap size={16} />
             折り返し
           </div>
           <div class="setting-control">
