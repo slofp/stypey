@@ -538,11 +538,12 @@ export class AdvancedTypeChecker {
       if (funcMatch) {
         normalized = funcMatch[1] + ' => ' + (funcMatch[2] || 'void');
       }
-    } else {
-      // Normal function type normalization
-      // Convert (params): returnType to (params) => returnType
-      normalized = normalized.replace(/(\([^)]*\))\s*:\s*([^,}]+)/g, '$1 => $2');
     }
+    
+    // Always normalize function type notation
+    // Convert (params): returnType to (params) => returnType
+    // This handles both function expressions and type annotations
+    normalized = normalized.replace(/^(\([^)]*\))\s*:\s*([^,}]+)$/g, '$1 => $2');
     
     // Remove trailing commas
     normalized = normalized.replace(/,(\s*[}\]])/g, '$1');
