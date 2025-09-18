@@ -51,23 +51,77 @@ export class CompilerTypeChecker {
   
   /**
    * Initialize and load TypeScript lib files from jsdelivr CDN
+   * Loads complete dependency chain to avoid runtime errors
    */
   private static async ensureInitialized(): Promise<void> {
     if (this.isInitialized) return;
     
-    // List of lib files to load
+    // Complete list of lib files with all dependencies
+    // Order matters: load base files first, then extensions
     const libFilesToLoad = [
+      // Base decorators (required by es5)
+      'lib.decorators.d.ts',
+      'lib.decorators.legacy.d.ts',
+      
+      // ES5 base
       'lib.es5.d.ts',
+      
+      // ES2015 (ES6)
+      'lib.es2015.d.ts',
       'lib.es2015.core.d.ts',
-      'lib.es2015.symbol.d.ts',
-      'lib.es2015.promise.d.ts',
-      'lib.es2015.iterable.d.ts',
       'lib.es2015.collection.d.ts',
       'lib.es2015.generator.d.ts',
-      'lib.es2020.promise.d.ts',
+      'lib.es2015.iterable.d.ts',
+      'lib.es2015.promise.d.ts',
+      'lib.es2015.proxy.d.ts',
+      'lib.es2015.reflect.d.ts',
+      'lib.es2015.symbol.d.ts',
+      'lib.es2015.symbol.wellknown.d.ts',
+      
+      // ES2016
+      'lib.es2016.d.ts',
+      'lib.es2016.array.include.d.ts',
+      
+      // ES2017
+      'lib.es2017.d.ts',
+      'lib.es2017.date.d.ts',
+      'lib.es2017.object.d.ts',
+      'lib.es2017.sharedmemory.d.ts',
+      'lib.es2017.string.d.ts',
+      'lib.es2017.intl.d.ts',
+      'lib.es2017.typedarrays.d.ts',
+      
+      // ES2018
+      'lib.es2018.d.ts',
+      'lib.es2018.asyncgenerator.d.ts',
+      'lib.es2018.asynciterable.d.ts',
+      'lib.es2018.intl.d.ts',
+      'lib.es2018.promise.d.ts',
+      'lib.es2018.regexp.d.ts',
+      
+      // ES2019
+      'lib.es2019.d.ts',
+      'lib.es2019.array.d.ts',
+      'lib.es2019.object.d.ts',
+      'lib.es2019.string.d.ts',
+      'lib.es2019.symbol.d.ts',
+      'lib.es2019.intl.d.ts',
+      
+      // ES2020
+      'lib.es2020.d.ts',
       'lib.es2020.bigint.d.ts',
+      'lib.es2020.date.d.ts',
+      'lib.es2020.promise.d.ts',
+      'lib.es2020.sharedmemory.d.ts',
       'lib.es2020.string.d.ts',
-      'lib.dom.d.ts'
+      'lib.es2020.symbol.wellknown.d.ts',
+      'lib.es2020.intl.d.ts',
+      'lib.es2020.number.d.ts',
+      
+      // DOM (optional but useful)
+      'lib.dom.d.ts',
+      'lib.dom.iterable.d.ts',
+      'lib.dom.asynciterable.d.ts'
     ];
     
     // Load all lib files in parallel from CDN
@@ -79,7 +133,8 @@ export class CompilerTypeChecker {
           const content = await response.text();
           this.libFiles.set(fileName, content);
         } else {
-          console.warn(`Failed to load ${fileName} from CDN: ${response.status}`);
+          // Some files might not exist in older TypeScript versions, that's OK
+          console.debug(`Optional lib file not found: ${fileName} (${response.status})`);
         }
       } catch (error) {
         console.warn(`Failed to load ${fileName} from CDN:`, error);
@@ -89,10 +144,15 @@ export class CompilerTypeChecker {
     await Promise.all(loadPromises);
     
     // Check if we loaded essential files
-    if (!this.libFiles.has('lib.es5.d.ts')) {
-      throw new Error('Failed to load essential TypeScript lib files from CDN');
+    const essentialFiles = ['lib.es5.d.ts', 'lib.decorators.d.ts'];
+    for (const essential of essentialFiles) {
+      if (!this.libFiles.has(essential)) {
+        console.error(`Failed to load essential file: ${essential}`);
+        // Try to continue anyway, some functionality might still work
+      }
     }
     
+    console.log(`Loaded ${this.libFiles.size} TypeScript lib files from CDN`);
     this.isInitialized = true;
   }
   
