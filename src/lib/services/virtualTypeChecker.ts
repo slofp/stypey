@@ -87,6 +87,7 @@ export class VirtualTypeChecker {
         'lib.es2020.symbol.wellknown.d.ts',
         'lib.es2020.intl.d.ts',
         'lib.es2020.number.d.ts',
+        'lib.es2020.full.d.ts',
         'lib.dom.d.ts',
         'lib.dom.iterable.d.ts',
         'lib.webworker.importscripts.d.ts',
@@ -107,7 +108,7 @@ export class VirtualTypeChecker {
         try {
           const parsedCache = JSON.parse(cached);
           parsedCache.forEach((entry: { key: string; value: string }) => {
-            fsMap.set(entry.key, entry.value);
+            fsMap.set(`/${entry.key}`, entry.value);
           });
           console.log(`Loaded ${fsMap.size} TypeScript lib files from cache`);
         } catch {
@@ -124,7 +125,7 @@ export class VirtualTypeChecker {
             
             if (response.ok) {
               const content = await response.text();
-              fsMap.set(file, content);
+              fsMap.set(`/${file}`, content);
               loadedCount++;
               return { key: file, value: content };
             }
@@ -164,8 +165,7 @@ export class VirtualTypeChecker {
         esModuleInterop: true,
         skipLibCheck: true,
         forceConsistentCasingInFileNames: true,
-        jsx: ts.JsxEmit.React,
-        lib: ['es2020', 'dom']  // Explicitly set lib to avoid missing references
+        jsx: ts.JsxEmit.None,
       };
       
       // Create the virtual environment
