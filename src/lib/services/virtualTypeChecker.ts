@@ -5,8 +5,7 @@
 
 import {
   createSystem,
-  createVirtualTypeScriptEnvironment,
-  createDefaultMapFromCDN
+  createVirtualTypeScriptEnvironment
 } from '@typescript/vfs';
 import type { VirtualTypeScriptEnvironment } from '@typescript/vfs';
 import ts from 'typescript';
@@ -42,15 +41,114 @@ export class VirtualTypeChecker {
     console.log('Initializing Virtual TypeScript Environment...');
     
     try {
-      // Create a map of files from CDN - includes lib.d.ts files
-      const fsMap = await createDefaultMapFromCDN(
-        {
-          target: ts.ScriptTarget.ES2020
-        },
-        '5.6.3',  // Fixed version available on CDN
-        true,  // Cache in localStorage
-        ts
-      );
+      // Create file system map manually
+      const fsMap = new Map<string, string>();
+      
+      // List of essential TypeScript lib files
+      const libFiles = [
+        'lib.d.ts',
+        'lib.es5.d.ts',
+        'lib.es2015.d.ts',
+        'lib.es2015.core.d.ts',
+        'lib.es2015.collection.d.ts',
+        'lib.es2015.generator.d.ts',
+        'lib.es2015.iterable.d.ts',
+        'lib.es2015.promise.d.ts',
+        'lib.es2015.proxy.d.ts',
+        'lib.es2015.reflect.d.ts',
+        'lib.es2015.symbol.d.ts',
+        'lib.es2015.symbol.wellknown.d.ts',
+        'lib.es2016.d.ts',
+        'lib.es2016.array.include.d.ts',
+        'lib.es2017.d.ts',
+        'lib.es2017.object.d.ts',
+        'lib.es2017.sharedmemory.d.ts',
+        'lib.es2017.string.d.ts',
+        'lib.es2017.intl.d.ts',
+        'lib.es2017.typedarrays.d.ts',
+        'lib.es2018.d.ts',
+        'lib.es2018.asyncgenerator.d.ts',
+        'lib.es2018.asynciterable.d.ts',
+        'lib.es2018.intl.d.ts',
+        'lib.es2018.promise.d.ts',
+        'lib.es2018.regexp.d.ts',
+        'lib.es2019.d.ts',
+        'lib.es2019.array.d.ts',
+        'lib.es2019.object.d.ts',
+        'lib.es2019.string.d.ts',
+        'lib.es2019.symbol.d.ts',
+        'lib.es2019.intl.d.ts',
+        'lib.es2020.d.ts',
+        'lib.es2020.bigint.d.ts',
+        'lib.es2020.date.d.ts',
+        'lib.es2020.promise.d.ts',
+        'lib.es2020.sharedmemory.d.ts',
+        'lib.es2020.string.d.ts',
+        'lib.es2020.symbol.wellknown.d.ts',
+        'lib.es2020.intl.d.ts',
+        'lib.es2020.number.d.ts',
+        'lib.dom.d.ts',
+        'lib.dom.iterable.d.ts',
+        'lib.webworker.importscripts.d.ts',
+        'lib.scripthost.d.ts',
+        'lib.decorators.d.ts',
+        'lib.decorators.legacy.d.ts'
+      ];
+      
+      // Fetch lib files from jsdelivr CDN
+      console.log('Loading TypeScript lib files from CDN...');
+      let loadedCount = 0;
+      
+      // Try to load from localStorage first
+      const cacheKey = 'ts-lib-files-5.6.3';
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const parsedCache = JSON.parse(cached);
+          parsedCache.forEach((entry: { key: string; value: string }) => {
+            fsMap.set(entry.key, entry.value);
+          });
+          console.log(`Loaded ${fsMap.size} TypeScript lib files from cache`);
+        } catch {
+          // Cache corrupted, will re-fetch
+        }
+      }
+      
+      // If not fully cached, fetch from CDN
+      if (fsMap.size < 5) {  // At minimum we need a few core lib files
+        const fetchPromises = libFiles.map(async (file) => {
+          try {
+            const url = `https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/${file}`;
+            const response = await fetch(url);
+            
+            if (response.ok) {
+              const content = await response.text();
+              fsMap.set(file, content);
+              loadedCount++;
+              return { key: file, value: content };
+            }
+          } catch (error) {
+            // Silently ignore individual file fetch failures
+            console.debug(`Failed to load ${file}:`, error);
+          }
+          return null;
+        });
+        
+        const results = await Promise.all(fetchPromises);
+        const validResults = results.filter(r => r !== null);
+        
+        console.log(`Loaded ${loadedCount} TypeScript lib files from CDN`);
+        
+        // Cache for next time
+        if (validResults.length > 0) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(validResults));
+          } catch {
+            // localStorage might be full, ignore
+          }
+        }
+      }
       
       // Add a valid main file to the map
       fsMap.set('main.ts', 'export {}; // TypeScript module placeholder');
@@ -67,6 +165,7 @@ export class VirtualTypeChecker {
         skipLibCheck: true,
         forceConsistentCasingInFileNames: true,
         jsx: ts.JsxEmit.React,
+        lib: ['es2020', 'dom']  // Explicitly set lib to avoid missing references
       };
       
       // Create the virtual environment
