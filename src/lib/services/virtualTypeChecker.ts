@@ -47,13 +47,13 @@ export class VirtualTypeChecker {
         {
           target: ts.ScriptTarget.ES2020
         },
-        ts.version,
+        '5.6.3',  // Fixed version available on CDN
         true,  // Cache in localStorage
         ts
       );
       
-      // Add an empty main file to the map
-      fsMap.set('main.ts', '');
+      // Add a valid main file to the map
+      fsMap.set('main.ts', 'export {}; // TypeScript module placeholder');
       
       // Create the virtual file system
       const system = createSystem(fsMap);
