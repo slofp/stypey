@@ -30,7 +30,8 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'monaco-editor',
-      'monaco-editor/esm/vs/editor/editor.api'
+      'monaco-editor/esm/vs/editor/editor.api',
+      'typescript'
     ],
     exclude: [
       'monaco-editor/esm/vs/editor/editor.worker',

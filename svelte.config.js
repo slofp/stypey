@@ -12,6 +12,7 @@ const config = {
       if (filename.includes('node_modules')) {
         return { runes: undefined } // or false, check what works
       }
+      return {}; // Default return value
     }
   },
 

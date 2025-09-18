@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Problem, TypeAssertion } from '$types/problem';
-  import { TypeChecker } from '$services/typeChecker';
-  import { AdvancedTypeChecker } from '$services/advancedTypeChecker';
+  import { CompilerTypeChecker } from '$services/compilerTypeChecker';
   import { Button, Badge } from '$components/UI';
   import { slide } from 'svelte/transition';
   import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
@@ -51,82 +50,55 @@
     let allPassed = true;
     
     // まず構文エラーがないかチェック
-    try {
-      const syntaxCheck = await TypeChecker.checkCode(userCode, 'syntax-check.ts');
-      if (syntaxCheck.errors.length > 0) {
-        // 構文エラーがある場合は解析エラーとして表示
-        parseError = `構文エラー: ${syntaxCheck.errors[0]?.message || 'コードに構文エラーがあります'}`;
-        testResults = [];
-        overallResult = 'failure';
-        isRunning = false;
-        return;
-      }
-    } catch (err) {
-      // エラー処理
-      parseError = `コードの解析に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`;
+    const syntaxCheck = CompilerTypeChecker.checkSyntax(userCode);
+    if (!syntaxCheck.isValid && syntaxCheck.errors.length > 0) {
+      // 構文エラーがある場合は解析エラーとして表示
+      parseError = `構文エラー: ${syntaxCheck.errors[0]?.message || 'コードに構文エラーがあります'}`;
       testResults = [];
       overallResult = 'failure';
       isRunning = false;
       return;
     }
     
-    // 高度な型チェッカーで検証
+    // TypeScript Compiler APIで型検証（真のAST解析）
     try {
-      const validationResult = await AdvancedTypeChecker.validateAssertions(
-        userCode,
-        problem.typeAssertions.map(a => ({
-          ...a,
-          comparisonMode: a.comparisonMode || 'structural'
-        }))
-      );
+      // TypeScript Compiler APIで型を抽出
+      const extractedTypes = CompilerTypeChecker.extractTypes(userCode);
       
-      // 検証結果を表示用に変換
-      for (let i = 0; i < validationResult.results.length; i++) {
+      // 各アサーションを検証
+      for (let i = 0; i < problem.typeAssertions.length; i++) {
+        const assertion = problem.typeAssertions[i];
         const testResult = testResults[i];
-        const assertionResult = validationResult.results[i];
         
-        if (!testResult || !assertionResult) continue;
+        if (!assertion || !testResult) continue;
         
         testResult.status = 'running';
         testResults = [...testResults];
         
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        if (assertionResult.result.matches) {
-          testResult.status = 'passed';
-          if (assertionResult.actualType) {
-            testResult.actualType = assertionResult.actualType;
-          }
-        } else {
+        const actualType = extractedTypes.get(assertion.symbol);
+        if (!actualType) {
           testResult.status = 'failed';
-          
-          // エラーメッセージを分かりやすく整形
-          if (assertionResult.result.differences && assertionResult.result.differences.length > 0) {
-            const mainDiff = assertionResult.result.differences[0];
-            if (mainDiff && (!mainDiff.path || mainDiff.path === '' || mainDiff.path === 'ルート')) {
-              // ルートレベルのエラーは直接的なメッセージにする
-              testResult.error = mainDiff.reason;
-            } else if (mainDiff) {
-              // ネストしたエラーは詳細を表示
-              testResult.error = `型の不一致: ${mainDiff.reason}`;
-              if (assertionResult.result.differences.length > 1) {
-                const otherDiffs = assertionResult.result.differences.slice(1)
-                  .map(d => `  • ${d.path ? d.path + ': ' : ''}${d.reason}`)
-                  .join('\n');
-                testResult.error += '\n詳細:\n' + otherDiffs;
-              }
-            } else {
-              testResult.error = assertionResult.result.details || '型が一致しません';
-            }
-          } else {
-            testResult.error = assertionResult.result.details || '型が一致しません';
-          }
-          
-          if (assertionResult.actualType) {
-            testResult.actualType = assertionResult.actualType;
-          }
-          
+          testResult.error = `シンボル '${assertion.symbol}' が見つかりません`;
+          testResult.actualType = 'undefined';
           allPassed = false;
+        } else {
+          // TypeScript Compiler APIで型比較
+          const comparisonResult = CompilerTypeChecker.compareTypes(
+            assertion.expectedType,
+            actualType
+          );
+          
+          if (comparisonResult.matches) {
+            testResult.status = 'passed';
+            testResult.actualType = actualType.typeString;
+          } else {
+            testResult.status = 'failed';
+            testResult.error = comparisonResult.details;
+            testResult.actualType = actualType.typeString;
+            allPassed = false;
+          }
         }
         
         testResults = [...testResults];
