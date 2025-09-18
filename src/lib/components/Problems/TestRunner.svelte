@@ -50,7 +50,7 @@
     let allPassed = true;
     
     // まず構文エラーがないかチェック
-    const syntaxCheck = CompilerTypeChecker.checkSyntax(userCode);
+    const syntaxCheck = await CompilerTypeChecker.checkSyntax(userCode);
     if (!syntaxCheck.isValid && syntaxCheck.errors.length > 0) {
       // 構文エラーがある場合は解析エラーとして表示
       parseError = `構文エラー: ${syntaxCheck.errors[0]?.message || 'コードに構文エラーがあります'}`;
@@ -63,7 +63,7 @@
     // TypeScript Compiler APIで型検証（真のAST解析）
     try {
       // TypeScript Compiler APIで型を抽出
-      const extractedTypes = CompilerTypeChecker.extractTypes(userCode);
+      const extractedTypes = await CompilerTypeChecker.extractTypes(userCode);
       
       // 各アサーションを検証
       for (let i = 0; i < problem.typeAssertions.length; i++) {

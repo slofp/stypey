@@ -24,6 +24,14 @@ export interface SyntaxError {
 }
 
 export class CompilerTypeChecker {
+  private static libFiles: Map<string, string> = new Map();
+  private static isInitialized = false;
+  
+  // Use jsdelivr CDN to fetch TypeScript lib files
+  // This provides fast, reliable access to TypeScript's official type definitions
+  private static readonly TS_VERSION = '5.6.3'; // Specify TypeScript version for consistency
+  private static readonly CDN_BASE_URL = `https://cdn.jsdelivr.net/npm/typescript@${CompilerTypeChecker.TS_VERSION}/lib/`;
+  
   private static compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.ESNext,
@@ -31,7 +39,7 @@ export class CompilerTypeChecker {
     esModuleInterop: true,
     skipLibCheck: true,
     forceConsistentCasingInFileNames: true,
-    lib: ['es2020', 'dom'],
+    noLib: true, // We'll provide our own lib files
     noImplicitAny: true,
     strictNullChecks: true,
     strictFunctionTypes: true,
@@ -42,9 +50,58 @@ export class CompilerTypeChecker {
   };
   
   /**
+   * Initialize and load TypeScript lib files from jsdelivr CDN
+   */
+  private static async ensureInitialized(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    // List of lib files to load
+    const libFilesToLoad = [
+      'lib.es5.d.ts',
+      'lib.es2015.core.d.ts',
+      'lib.es2015.symbol.d.ts',
+      'lib.es2015.promise.d.ts',
+      'lib.es2015.iterable.d.ts',
+      'lib.es2015.collection.d.ts',
+      'lib.es2015.generator.d.ts',
+      'lib.es2020.promise.d.ts',
+      'lib.es2020.bigint.d.ts',
+      'lib.es2020.string.d.ts',
+      'lib.dom.d.ts'
+    ];
+    
+    // Load all lib files in parallel from CDN
+    const loadPromises = libFilesToLoad.map(async (fileName) => {
+      try {
+        const url = `${this.CDN_BASE_URL}${fileName}`;
+        const response = await fetch(url);
+        if (response.ok) {
+          const content = await response.text();
+          this.libFiles.set(fileName, content);
+        } else {
+          console.warn(`Failed to load ${fileName} from CDN: ${response.status}`);
+        }
+      } catch (error) {
+        console.warn(`Failed to load ${fileName} from CDN:`, error);
+      }
+    });
+    
+    await Promise.all(loadPromises);
+    
+    // Check if we loaded essential files
+    if (!this.libFiles.has('lib.es5.d.ts')) {
+      throw new Error('Failed to load essential TypeScript lib files from CDN');
+    }
+    
+    this.isInitialized = true;
+  }
+  
+  /**
    * Check syntax errors using real TypeScript Compiler API
    */
-  static checkSyntax(code: string): SyntaxCheckResult {
+  static async checkSyntax(code: string): Promise<SyntaxCheckResult> {
+    await this.ensureInitialized();
+    
     const sourceFile = ts.createSourceFile(
       'temp.ts',
       code,
@@ -80,7 +137,9 @@ export class CompilerTypeChecker {
   /**
    * Extract types from TypeScript code using real Compiler API
    */
-  static extractTypes(code: string): Map<string, InferredType> {
+  static async extractTypes(code: string): Promise<Map<string, InferredType>> {
+    await this.ensureInitialized();
+    
     const types = new Map<string, InferredType>();
     const fileName = 'temp.ts';
     
@@ -109,8 +168,10 @@ export class CompilerTypeChecker {
     const files = new Map<string, string>();
     files.set(fileName, code);
     
-    // Add minimal type definitions
-    files.set('lib.d.ts', this.getBasicLibContent());
+    // Add all loaded lib files
+    for (const [libName, libContent] of this.libFiles) {
+      files.set(libName, libContent);
+    }
     
     return {
       getSourceFile: (name: string, target: ts.ScriptTarget) => {
@@ -118,21 +179,21 @@ export class CompilerTypeChecker {
         if (source) {
           return ts.createSourceFile(name, source, target, true);
         }
-        // Return minimal lib.d.ts for basic types
-        if (name.includes('lib.')) {
-          return ts.createSourceFile(name, this.getBasicLibContent(), target, true);
+        // Check for lib files
+        if (this.libFiles.has(name)) {
+          return ts.createSourceFile(name, this.libFiles.get(name)!, target, true);
         }
         return undefined;
       },
       writeFile: () => {},
       getCurrentDirectory: () => '/',
       getDirectories: () => [],
-      fileExists: (name: string) => files.has(name) || name.includes('lib.'),
-      readFile: (name: string) => files.get(name),
+      fileExists: (name: string) => files.has(name) || this.libFiles.has(name),
+      readFile: (name: string) => files.get(name) || this.libFiles.get(name),
       getCanonicalFileName: (name: string) => name,
       useCaseSensitiveFileNames: () => true,
       getNewLine: () => '\n',
-      getDefaultLibFileName: () => 'lib.d.ts',
+      getDefaultLibFileName: (options: ts.CompilerOptions) => 'lib.es5.d.ts',
       resolveModuleNames: () => [],
     };
   }
@@ -288,132 +349,5 @@ export class CompilerTypeChecker {
         ? '型が一致します'
         : `期待: ${normalizedExpected}, 実際: ${normalizedActual}`
     };
-  }
-  
-  /**
-   * Get basic TypeScript lib content for browser environment
-   */
-  private static getBasicLibContent(): string {
-    // Minimal type definitions for basic types
-    return `
-      interface Array<T> { 
-        length: number;
-        [n: number]: T;
-        push(...items: T[]): number;
-        pop(): T | undefined;
-        concat(...items: T[][]): T[];
-        join(separator?: string): string;
-        slice(start?: number, end?: number): T[];
-        indexOf(searchElement: T, fromIndex?: number): number;
-        map<U>(callbackfn: (value: T, index: number, array: T[]) => U): U[];
-        filter(callbackfn: (value: T, index: number, array: T[]) => boolean): T[];
-        forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
-        reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
-      }
-      interface String { 
-        length: number;
-        charAt(pos: number): string;
-        charCodeAt(index: number): number;
-        concat(...strings: string[]): string;
-        indexOf(searchString: string, position?: number): number;
-        slice(start?: number, end?: number): string;
-        split(separator?: string | RegExp, limit?: number): string[];
-        substring(start: number, end?: number): string;
-        toLowerCase(): string;
-        toUpperCase(): string;
-        trim(): string;
-        replace(searchValue: string | RegExp, replaceValue: string): string;
-      }
-      interface Number {
-        toString(radix?: number): string;
-        toFixed(fractionDigits?: number): string;
-        toExponential(fractionDigits?: number): string;
-        toPrecision(precision?: number): string;
-        valueOf(): number;
-      }
-      interface Boolean {
-        valueOf(): boolean;
-      }
-      interface Function {
-        apply(thisArg: any, argArray?: any): any;
-        call(thisArg: any, ...argArray: any[]): any;
-        bind(thisArg: any, ...argArray: any[]): any;
-        toString(): string;
-        prototype: any;
-        length: number;
-        name: string;
-      }
-      interface Object {
-        constructor: Function;
-        toString(): string;
-        valueOf(): Object;
-        hasOwnProperty(v: string): boolean;
-      }
-      interface RegExp {
-        exec(string: string): RegExpExecArray | null;
-        test(string: string): boolean;
-        source: string;
-        global: boolean;
-        ignoreCase: boolean;
-        multiline: boolean;
-        lastIndex: number;
-      }
-      interface RegExpExecArray extends Array<string> {
-        index: number;
-        input: string;
-      }
-      interface Date {
-        toString(): string;
-        toDateString(): string;
-        toTimeString(): string;
-        toISOString(): string;
-        toUTCString(): string;
-        getTime(): number;
-        getFullYear(): number;
-        getMonth(): number;
-        getDate(): number;
-        getHours(): number;
-        getMinutes(): number;
-        getSeconds(): number;
-      }
-      type Partial<T> = {
-        [P in keyof T]?: T[P];
-      };
-      type Required<T> = {
-        [P in keyof T]-?: T[P];
-      };
-      type Readonly<T> = {
-        readonly [P in keyof T]: T[P];
-      };
-      type Pick<T, K extends keyof T> = {
-        [P in K]: T[P];
-      };
-      type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-      type Exclude<T, U> = T extends U ? never : T;
-      type Extract<T, U> = T extends U ? T : never;
-      type NonNullable<T> = T extends null | undefined ? never : T;
-      type ReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : any;
-      type InstanceType<T extends new (...args: any) => any> = T extends new (...args: any) => infer R ? R : any;
-      type ThisType<T> = T;
-      declare var NaN: number;
-      declare var Infinity: number;
-      declare function eval(x: string): any;
-      declare function parseInt(s: string, radix?: number): number;
-      declare function parseFloat(string: string): number;
-      declare function isNaN(number: number): boolean;
-      declare function isFinite(number: number): boolean;
-      declare function decodeURI(encodedURI: string): string;
-      declare function decodeURIComponent(encodedURIComponent: string): string;
-      declare function encodeURI(uri: string): string;
-      declare function encodeURIComponent(uriComponent: string): string;
-      interface Console {
-        log(...data: any[]): void;
-        error(...data: any[]): void;
-        warn(...data: any[]): void;
-        info(...data: any[]): void;
-      }
-      declare var console: Console;
-      declare var undefined: undefined;
-    `;
   }
 }
