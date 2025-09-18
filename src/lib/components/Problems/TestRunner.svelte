@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Problem, TypeAssertion } from '$types/problem';
-  import { CompilerTypeChecker } from '$services/compilerTypeChecker';
+  import { VirtualTypeChecker } from '$services/virtualTypeChecker';
   import { Button, Badge } from '$components/UI';
   import { slide } from 'svelte/transition';
   import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
@@ -50,7 +50,7 @@
     let allPassed = true;
     
     // まず構文エラーがないかチェック
-    const syntaxCheck = await CompilerTypeChecker.checkSyntax(userCode);
+    const syntaxCheck = await VirtualTypeChecker.checkSyntax(userCode);
     if (!syntaxCheck.isValid && syntaxCheck.errors.length > 0) {
       // 構文エラーがある場合は解析エラーとして表示
       parseError = `構文エラー: ${syntaxCheck.errors[0]?.message || 'コードに構文エラーがあります'}`;
@@ -62,8 +62,8 @@
     
     // TypeScript Compiler APIで型検証（真のAST解析）
     try {
-      // TypeScript Compiler APIで型を抽出
-      const extractedTypes = await CompilerTypeChecker.extractTypes(userCode);
+      // Virtual TypeScript Environmentで型を抽出
+      const extractedTypes = await VirtualTypeChecker.extractTypes(userCode);
       
       // 各アサーションを検証
       for (let i = 0; i < problem.typeAssertions.length; i++) {
@@ -84,8 +84,8 @@
           testResult.actualType = 'undefined';
           allPassed = false;
         } else {
-          // TypeScript Compiler APIで型比較
-          const comparisonResult = CompilerTypeChecker.compareTypes(
+          // Virtual TypeScript Environmentで型比較
+          const comparisonResult = VirtualTypeChecker.compareTypes(
             assertion.expectedType,
             actualType
           );
