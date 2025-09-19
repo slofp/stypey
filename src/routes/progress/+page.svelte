@@ -61,7 +61,7 @@
 </script>
 
 <svelte:head>
-  <title>進捗 - TypeMaster</title>
+  <title>進捗 - Stypey</title>
   <meta name="description" content="学習の進捗とスタッツを確認" />
 </svelte:head>
 

@@ -95,7 +95,7 @@
 </script>
 
 <svelte:head>
-  <title>{problem.title} - TypeMaster</title>
+  <title>{problem.title} - Stypey</title>
   <meta name="description" content={problem.description} />
 </svelte:head>
 

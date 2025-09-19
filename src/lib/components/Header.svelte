@@ -21,7 +21,7 @@
     <div class="header-left">
       <a href="/" class="logo">
         <LogoIcon size={24} class="logo-icon" />
-        <span class="logo-text">TypeMaster</span>
+        <span class="logo-text">Stypey</span>
       </a>
       <nav class="nav">
         <a href="/" class="nav-link" class:active={currentPath === '/'}>

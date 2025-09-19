@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   
-  let editorValue = $state(`// TypeScript 型学習プラットフォーム「TypeMaster」へようこそ！
+  let editorValue = $state(`// TypeScript 型学習プラットフォーム「Stypey」へようこそ！
 // ここでTypeScriptの型システムを学習できます。
 
 // 基本的な型注釈
@@ -62,7 +62,7 @@ console.log(message, user, result, doubled);`);
 </script>
 
 <svelte:head>
-  <title>TypeMaster - TypeScript型学習プラットフォーム</title>
+  <title>Stypey - TypeScript型学習プラットフォーム</title>
   <meta name="description" content="TypeScriptの型システムを実践的に学習できるインタラクティブなプラットフォーム" />
 </svelte:head>
 

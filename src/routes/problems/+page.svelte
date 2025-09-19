@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-  <title>問題一覧 - TypeMaster</title>
+  <title>問題一覧 - Stypey</title>
   <meta name="description" content="TypeScriptの型システムを学習する問題一覧" />
 </svelte:head>
 
