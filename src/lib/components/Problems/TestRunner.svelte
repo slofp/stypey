@@ -4,6 +4,7 @@
   import { VirtualTypeChecker } from '$services/virtualTypeChecker';
   import { createComparator } from '$services/astComparator';
   import type { ASTAssertionResult } from '$types/astSchema';
+  import { patternToString } from '$types/typePatterns';
   import { Button, Badge } from '$components/UI';
   import { slide } from 'svelte/transition';
   import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
@@ -202,6 +203,23 @@
     }
     showDetails = newSet;
   }
+  
+  function getModeDescription(mode: string): string {
+    switch (mode) {
+      case 'exact':
+        return '完全一致（型の表記も厳密にチェック）';
+      case 'structural':
+        return '構造的等価性（プロパティ順序や配列記法の差異を無視）';
+      case 'assignable':
+        return '代入可能性（実際の型が期待される型に代入可能か）';
+      case 'partial':
+        return '部分一致（期待される型のサブセット）';
+      case 'shape':
+        return '形状の互換性（型の形が一致するか）';
+      default:
+        return mode;
+    }
+  }
 </script>
 
 <div class="test-runner" bind:this={testRunnerElement}>
@@ -273,16 +291,17 @@
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">期待される型:</span>
-                  <pre class="type-value">
-                    {isASTTypeAssertion(result.assertion) 
-                      ? `Pattern: ${result.assertion.pattern.kind}` 
-                      : result.assertion.expectedType}
-                  </pre>
+                  <pre class="type-value">{isASTTypeAssertion(result.assertion) 
+                      ? patternToString(result.assertion.pattern) 
+                      : result.assertion.expectedType}</pre>
                 </div>
                 {#if isASTTypeAssertion(result.assertion)}
                   <div class="detail-row">
                     <span class="detail-label">比較モード:</span>
-                    <span class="detail-value">{result.assertion.mode}</span>
+                    <div class="mode-info">
+                      <span class="detail-value">{result.assertion.mode}</span>
+                      <span class="mode-hint">{getModeDescription(result.assertion.mode)}</span>
+                    </div>
                   </div>
                 {/if}
                 {#if result.actualType}
@@ -500,6 +519,19 @@
     font-size: 0.75rem;
     color: var(--text-primary);
     overflow-x: auto;
+  }
+  
+  .mode-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .mode-hint {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin-left: 0.5rem;
   }
   
   .test-code {
