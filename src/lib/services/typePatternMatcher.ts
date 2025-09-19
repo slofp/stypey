@@ -4,7 +4,7 @@
  * Converts TypeScript Compiler API types to AST patterns and performs pattern matching
  */
 
-import type * as ts from 'typescript';
+import * as ts from 'typescript';
 import type {
   TypePattern,
   PrimitiveTypePattern,
