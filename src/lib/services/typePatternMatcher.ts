@@ -25,6 +25,7 @@ import type {
   MethodPattern,
   EnumPattern,
   EnumMemberPattern,
+  TypeAliasPattern,
   WildcardPattern,
   ExtractedTypeInfo,
   EnhancedExtractedTypeInfo,
@@ -56,8 +57,28 @@ export class TypePatternMatcher {
     const symbol = this.getSymbolFromNode(node);
     if (!symbol) return undefined;
 
-    const type = this.typeChecker.getTypeOfSymbolAtLocation(symbol, node);
-    const typePattern = this.typeToPattern(type, node);
+    let type: ts.Type;
+    let typePattern: TypePattern;
+    
+    // Special handling for interface and type alias declarations
+    if (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
+      // For interface and type alias declarations, get the declared type
+      type = this.typeChecker.getDeclaredTypeOfSymbol(symbol);
+      
+      // Create appropriate pattern based on declaration type
+      if (ts.isInterfaceDeclaration(node)) {
+        typePattern = this.createInterfacePatternFromDeclaration(node, type);
+      } else if (ts.isTypeAliasDeclaration(node)) {
+        typePattern = this.createTypeAliasPatternFromDeclaration(node, type);
+      } else {
+        typePattern = this.typeToPattern(type, node);
+      }
+    } else {
+      // For other nodes, use the regular approach
+      type = this.typeChecker.getTypeOfSymbolAtLocation(symbol, node);
+      typePattern = this.typeToPattern(type, node);
+    }
+    
     const symbolKind = this.getSymbolKind(node);
     const modifiers = this.getModifiers(node);
     const location = this.getSourceLocation(node);
@@ -93,6 +114,61 @@ export class TypePatternMatcher {
       typeComplexity: complexity,
       hasDocumentation: docInfo.hasDocumentation,
       documentation: docInfo.documentation
+    };
+  }
+  
+  /**
+   * Create interface pattern from interface declaration
+   */
+  private createInterfacePatternFromDeclaration(node: ts.InterfaceDeclaration, type: ts.Type): InterfacePattern {
+    const name = node.name.text;
+    const objectType = type as ts.ObjectType;
+    const properties: PropertyPattern[] = [];
+    const methods: MethodPattern[] = [];
+
+    // Get properties and methods from the interface
+    for (const prop of objectType.getProperties()) {
+      const propType = this.typeChecker.getTypeOfSymbolAtLocation(prop, prop.valueDeclaration!);
+      
+      if (propType.getCallSignatures().length > 0) {
+        // It's a method
+        methods.push({
+          name: prop.name,
+          signature: this.createFunctionPattern(propType as ts.ObjectType),
+          optional: !!(prop.flags & ts.SymbolFlags.Optional)
+        });
+      } else {
+        // It's a property
+        properties.push({
+          name: prop.name,
+          type: this.typeToPattern(propType),
+          optional: !!(prop.flags & ts.SymbolFlags.Optional),
+          readonly: !!(prop.flags & ts.SymbolFlags.Readonly)
+        });
+      }
+    }
+
+    return {
+      kind: 'interface',
+      name,
+      properties,
+      methods: methods.length > 0 ? methods : undefined
+    };
+  }
+  
+  /**
+   * Create type alias pattern from type alias declaration
+   */
+  private createTypeAliasPatternFromDeclaration(node: ts.TypeAliasDeclaration, type: ts.Type): TypeAliasPattern {
+    const name = node.name.text;
+    
+    // Get the aliased type
+    const aliasedType = this.typeToPattern(type, node);
+    
+    return {
+      kind: 'typeAlias',
+      name,
+      type: aliasedType
     };
   }
 

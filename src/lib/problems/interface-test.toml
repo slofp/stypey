@@ -1,0 +1,108 @@
+# Problem: Interface Type Test
+id = "interface-test-01"
+title = "Interface型テスト"
+difficulty = "easy"
+category = "test"
+description = """
+Interface と Type alias が正しく認識されるかテストします。
+"""
+
+starterCode = """
+// Interface定義
+interface User {
+  id: number;
+  name: string;
+  email?: string;
+}
+
+// Type alias定義
+type Status = 'active' | 'inactive' | 'pending';
+
+// Interface使用
+const user: User = {
+  id: 1,
+  name: "Alice"
+};
+
+// Type alias使用
+const status: Status = 'active';
+"""
+
+solution = """
+interface User {
+  id: number;
+  name: string;
+  email?: string;
+}
+
+type Status = 'active' | 'inactive' | 'pending';
+
+const user: User = {
+  id: 1,
+  name: "Alice"
+};
+
+const status: Status = 'active';
+"""
+
+hints = [
+  "Interfaceの定義を確認",
+  "Type aliasの定義を確認"
+]
+
+[[typeAssertions]]
+symbol = "User"
+symbolKind = "interface"
+pattern = {
+  kind = "interface",
+  name = "User",
+  properties = [
+    { name = "id", type = { kind = "primitive", type = "number" } },
+    { name = "name", type = { kind = "primitive", type = "string" } },
+    { name = "email", type = { kind = "primitive", type = "string" }, optional = true }
+  ]
+}
+mode = "structural"
+description = "User インターフェース"
+
+[[typeAssertions]]
+symbol = "Status"
+symbolKind = "type"
+pattern = {
+  kind = "typeAlias",
+  name = "Status",
+  type = {
+    kind = "union",
+    types = [
+      { kind = "literal", value = "active" },
+      { kind = "literal", value = "inactive" },
+      { kind = "literal", value = "pending" }
+    ]
+  }
+}
+mode = "exact"
+description = "Status 型エイリアス"
+
+[[typeAssertions]]
+symbol = "user"
+symbolKind = "variable"
+pattern = { 
+  kind = "typeReference",
+  name = "User"
+}
+mode = "structural"
+description = "user変数がUser型"
+
+[[typeAssertions]]
+symbol = "status"
+symbolKind = "variable"
+pattern = {
+  kind = "union",
+  types = [
+    { kind = "literal", value = "active" },
+    { kind = "literal", value = "inactive" },
+    { kind = "literal", value = "pending" }
+  ]
+}
+mode = "assignable"
+description = "status変数がStatus型"

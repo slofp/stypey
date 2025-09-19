@@ -897,6 +897,50 @@ export function patternToString(pattern: TypePattern): string {
       
     case 'wildcard':
       return pattern.description || '*';
+    
+    case 'interface':
+      const interfacePattern = pattern as InterfacePattern;
+      const iProps = interfacePattern.properties.map(prop => {
+        const optional = prop.optional ? '?' : '';
+        const readonly = prop.readonly ? 'readonly ' : '';
+        return `${readonly}${prop.name}${optional}: ${patternToString(prop.type)}`;
+      }).join('; ');
+      return `interface ${interfacePattern.name} { ${iProps} }`;
+    
+    case 'class':
+      const classPattern = pattern as ClassPattern;
+      return `class ${classPattern.name}`;
+    
+    case 'typeAlias':
+      const aliasPattern = pattern as TypeAliasPattern;
+      return `type ${aliasPattern.name} = ${patternToString(aliasPattern.type)}`;
+    
+    case 'enum':
+      const enumPattern = pattern as EnumPattern;
+      const members = enumPattern.members.map(m => 
+        m.value !== undefined ? `${m.name} = ${m.value}` : m.name
+      ).join(', ');
+      return `enum ${enumPattern.name} { ${members} }`;
+    
+    case 'conditional':
+      const condPattern = pattern as ConditionalTypePattern;
+      return `${patternToString(condPattern.checkType)} extends ${patternToString(condPattern.extendsType)} ? ${patternToString(condPattern.trueType)} : ${patternToString(condPattern.falseType)}`;
+    
+    case 'mapped':
+      const mappedPattern = pattern as MappedTypePattern;
+      const readonly = mappedPattern.readonlyModifier === '+' ? 'readonly ' : '';
+      const optional = mappedPattern.optionalModifier === '+' ? '?' : '';
+      return `{ [K in ${patternToString(mappedPattern.keyType)}]${optional}: ${patternToString(mappedPattern.valueType)} }`;
+    
+    case 'templateLiteral':
+      const templatePattern = pattern as TemplateLiteralTypePattern;
+      return '`' + templatePattern.parts.map(part => 
+        typeof part === 'string' ? part : `\${${patternToString(part)}}`
+      ).join('') + '`';
+    
+    case 'namespace':
+      const namespacePattern = pattern as NamespacePattern;
+      return `namespace ${namespacePattern.name}`;
       
     default:
       return '<complex type>';
