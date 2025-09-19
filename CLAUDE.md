@@ -1,4 +1,4 @@
-# TypeMaster - TypeScript型学習プラットフォーム開発記録
+# Stypey - TypeScript型学習プラットフォーム開発記録
 
 ## 🎉 プロジェクト完成！
 
@@ -36,7 +36,7 @@ UI的要件
 
 ## プロジェクト概要
 
-TypeScriptの型システムを実践的に学習できるWebアプリケーション「TypeMaster」の開発記録です。
+TypeScriptの型システムを実践的に学習できるWebアプリケーション「Stypey」の開発記録です。
 
 ### 主要な要件
 - **学習形式**: 実際にTypeScriptコードを書いて、推論された型や記述内容で正答を判定
@@ -373,7 +373,7 @@ src/
 
 ## 次回の作業時の注意点
 
-1. Monaco Editorは必ずクライアントサイドで初朝化
+1. Monaco Editorは必ずクライアントサイドで初期化
 2. 型定義は先に作成してから実装
 3. CSS変数でテーマを管理（Tailwindは使わない）
 4. Svelte 5のRunesを積極的に活用
@@ -381,4 +381,165 @@ src/
 
 ---
 
-最終更新: 2024年 プロジェクト完成時点
+## 🚀 ASTベース型検証システム（2025年1月実装）
+
+### 実装の背景
+従来の文字列ベースの型比較では、`string[]` と `Array<string>` のような同等の型を別物として判定してしまうなど、様々な制限がありました。これを解決するため、TypeScript ASTを用いた高精度な型検証システムを実装しました。
+
+### 実装したコンポーネント
+
+#### 1. **型定義スキーマ** (`astSchema.ts`)
+- 30種類以上のAST型パターン定義（プリミティブ、リテラル、配列、オブジェクト、関数、ジェネリクス等）
+- 5つの比較モード：
+  - `exact`: 完全一致（型の表記も厳密にチェック）
+  - `structural`: 構造的等価性（プロパティ順序や配列記法の差異を無視）
+  - `assignable`: 代入可能性（実際の型が期待される型に代入可能か）
+  - `partial`: 部分一致（期待される型のサブセット）
+  - `shape`: 形状の互換性（型の形が一致するか）
+- 詳細なエラー・警告システム
+
+#### 2. **型パターンビルダー** (`typePatterns.ts`)
+- 人間が読みやすい型の文字列表現生成（`patternToString`）
+- TypeScriptユーティリティ型のパターン（Partial、Pick、Omit等）
+- パターン変換・操作ユーティリティ
+
+#### 3. **AST比較エンジン** (`astComparator.ts`)
+- 高度な型比較ロジック
+- 型の表記揺れ対応（`string[]` ≡ `Array<string>`）
+- ユニオン型のメンバー順序非依存比較
+- オブジェクトのプロパティ順序非依存比較
+- 詳細なdiff生成とエラーレポート
+
+#### 4. **型パターンマッチャー** (`typePatternMatcher.ts`)
+- TypeScript Compiler APIからASTパターンへの変換
+- 複雑な型（ジェネリクス、条件型、マップ型等）の正確な抽出
+- インターフェース、クラス、enum等の高レベル構造のサポート
+
+**重要**: `import * as ts from 'typescript'` を使用（`import type`ではない）
+
+#### 5. **VirtualTypeChecker拡張**
+新しいメソッド：
+- `extractTypePatterns()`: AST形式での型情報抽出
+- `extractTypePatternBySymbol()`: 特定シンボルの型パターン抽出
+- `extractTypesAsPatterns()`: パターンのみを返すヘルパー
+
+#### 6. **TestRunner改善**
+- 新旧両形式の型アサーションをサポート
+- 期待される型を人間が読みやすい形式で表示
+- 比較モードの説明をインラインで表示
+- より詳細なエラーメッセージ
+
+### TOML形式の進化
+
+#### 従来の形式（文字列ベース）
+```toml
+[[typeAssertions]]
+symbol = "userName"
+expectedType = "string"
+kind = "variable"
+comparisonMode = "structural"
+```
+
+#### 新しいAST形式
+```toml
+[[typeAssertions]]
+symbol = "userName"
+symbolKind = "variable"
+mode = "exact"
+description = "userName は string 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "string"
+```
+
+#### 複雑な型の例（ジェネリクス関数）
+```toml
+[[typeAssertions]]
+symbol = "getFirst"
+symbolKind = "function"
+mode = "structural"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "arr"
+[typeAssertions.pattern.parameters.type]
+kind = "array"
+[typeAssertions.pattern.parameters.type.elementType]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "union"
+[[typeAssertions.pattern.returnType.types]]
+kind = "typeReference"
+name = "T"
+[[typeAssertions.pattern.returnType.types]]
+kind = "primitive"
+type = "undefined"
+```
+
+### 主な改善点
+
+1. **型の正確な比較**
+   - 表記の違いを吸収（`string[]` ≡ `Array<string>`）
+   - プロパティ順序を無視
+   - ユニオン型のメンバー順序を無視
+
+2. **柔軟な検証モード**
+   - 用途に応じて5つのモードから選択可能
+   - 各モードの動作が明確に定義されている
+
+3. **優れたUX**
+   - 期待される型が具体的に表示される
+   - 比較モードの意味が分かりやすく説明される
+   - エラーメッセージが具体的で理解しやすい
+
+4. **後方互換性**
+   - 既存の文字列ベースの型アサーションも引き続きサポート
+   - 新旧形式を混在させることが可能
+   - ProblemParserが自動的に形式を判定
+
+### 実装時の注意点
+
+1. **TypeScriptインポート**: TypePatternMatcherでは必ず `import * as ts from 'typescript'` を使用（`import type`ではランタイムエラーになる）
+
+2. **AST形式のTOML**: 階層構造に注意（pattern、properties、typeArgumentsなどの入れ子構造）
+
+3. **パフォーマンス**: AST比較は文字列比較より処理負荷が高いため、必要に応じて最適化を検討
+
+### 利用可能な型パターン
+
+- `primitive`: 基本型（string, number, boolean等）
+- `literal`: リテラル型（"foo", 42, true等）
+- `array`: 配列型
+- `tuple`: タプル型
+- `object`: オブジェクト型
+- `union`: ユニオン型
+- `intersection`: インターセクション型
+- `function`: 関数型
+- `generic`: ジェネリック型（Array<T>, Promise<T>等）
+- `typeReference`: 型参照（T等）
+- `interface`: インターフェース
+- `class`: クラス
+- `enum`: 列挙型
+- `conditional`: 条件型
+- `mapped`: マップ型
+- `templateLiteral`: テンプレートリテラル型
+- `wildcard`: ワイルドカード（任意の型にマッチ）
+
+### 今後の拡張可能性
+
+- WebAssemblyを使用したより高速な型チェック
+- より複雑な型パズルの実装
+- リアルタイムコラボレーション機能
+- AIによる型エラーの説明と修正提案
+
+---
+
+最終更新: 2025年1月 ASTベース型検証システム実装完了
