@@ -1,0 +1,200 @@
+# AST-based Type Assertion Example - Basic Types
+# This demonstrates the new AST-based type assertion format
+
+[problem]
+id = "ast-example-basic"
+title = "AST形式の基本型チェック"
+difficulty = "beginner"
+category = "type-basics"
+description = """
+新しいAST形式の型アサーションを使用した基本的な型チェックの例です。
+変数、配列、オブジェクトの型を正確に定義してください。
+"""
+code = """
+// 基本的な型定義
+const userName = 'Alice';
+const age = 25;
+const isActive = true;
+
+// 配列の定義
+const numbers = [1, 2, 3, 4, 5];
+const strings: string[] = ['hello', 'world'];
+
+// オブジェクトの定義
+const user = {
+  id: 1,
+  name: 'Bob',
+  email: 'bob@example.com'
+};
+
+// ユニオン型
+type Status = 'pending' | 'active' | 'inactive';
+const currentStatus: Status = 'active';
+"""
+solution = """
+// 基本的な型定義
+const userName: string = 'Alice';
+const age: number = 25;
+const isActive: boolean = true;
+
+// 配列の定義
+const numbers: number[] = [1, 2, 3, 4, 5];
+const strings: string[] = ['hello', 'world'];
+
+// オブジェクトの定義
+const user: { id: number; name: string; email: string } = {
+  id: 1,
+  name: 'Bob',
+  email: 'bob@example.com'
+};
+
+// ユニオン型
+type Status = 'pending' | 'active' | 'inactive';
+const currentStatus: Status = 'active';
+"""
+hint1 = "基本的な型は `string`, `number`, `boolean` です。"
+hint2 = "配列は `T[]` または `Array<T>` で表現できます。"
+
+# ============================================================================
+# AST-based Type Assertions
+# ============================================================================
+
+[[typeAssertions]]
+symbol = "userName"
+symbolKind = "variable"
+mode = "exact"
+description = "userName は string 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "age"
+symbolKind = "variable"
+mode = "exact"
+description = "age は number 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "isActive"
+symbolKind = "variable"
+mode = "exact"
+description = "isActive は boolean 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "boolean"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "numbers"
+symbolKind = "variable"
+mode = "structural"
+description = "numbers は number の配列であること"
+
+[typeAssertions.pattern]
+kind = "array"
+
+[typeAssertions.pattern.elementType]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "strings"
+symbolKind = "variable"
+mode = "structural"
+description = "strings は string の配列であること"
+
+[typeAssertions.pattern]
+kind = "array"
+
+[typeAssertions.pattern.elementType]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "user"
+symbolKind = "variable"
+mode = "structural"
+description = "user は指定されたプロパティを持つオブジェクトであること"
+
+[typeAssertions.pattern]
+kind = "object"
+allowExtraProperties = false
+
+[[typeAssertions.pattern.properties]]
+name = "id"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "name"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "email"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "Status"
+symbolKind = "type"
+mode = "exact"
+description = "Status はリテラル型のユニオンであること"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "pending"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "active"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "inactive"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "currentStatus"
+symbolKind = "variable"
+mode = "assignable"
+description = "currentStatus は Status 型に代入可能であること"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "pending"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "active"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "inactive"

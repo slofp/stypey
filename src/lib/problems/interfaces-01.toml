@@ -80,17 +80,124 @@ hints = [
 ]
 tags = ["interfaces", "types", "objects"]
 
-# 型推論要件
+# AST-based Type Assertions
+[[typeAssertions]]
+symbol = "User"
+symbolKind = "interface"
+mode = "structural"
+description = "User インターフェースが正しく定義されていること"
+
+[typeAssertions.pattern]
+kind = "interface"
+name = "User"
+
+[[typeAssertions.pattern.properties]]
+name = "id"
+readonly = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "name"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "email"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "age"
+optional = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "bio"
+optional = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "AdminUser"
+symbolKind = "interface"
+mode = "structural"
+description = "AdminUser インターフェースが User を拡張し、permissions を持つこと"
+
+[typeAssertions.pattern]
+kind = "interface"
+name = "AdminUser"
+
+# AdminUser extends User のプロパティ
+[[typeAssertions.pattern.properties]]
+name = "id"
+readonly = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "name"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "email"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "age"
+optional = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "bio"
+optional = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "permissions"
+[typeAssertions.pattern.properties.type]
+kind = "array"
+[typeAssertions.pattern.properties.type.elementType]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
+
 [[typeAssertions]]
 symbol = "user"
-expectedType = "User"
-kind = "variable"
-description = "user は User インターフェース型であること"
-comparisonMode = "type-alias"
+symbolKind = "variable"
+mode = "assignable"
+description = "user は User インターフェース型に代入可能であること"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "User"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "admin"
-expectedType = "AdminUser"
-kind = "variable"
-description = "admin は AdminUser インターフェース型であること"
-comparisonMode = "type-alias"
+symbolKind = "variable"
+mode = "assignable"
+description = "admin は AdminUser インターフェース型に代入可能であること"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "AdminUser"

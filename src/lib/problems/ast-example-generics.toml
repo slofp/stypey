@@ -1,0 +1,234 @@
+# AST-based Type Assertion Example - Generics and Functions
+# This demonstrates generic types and function signatures
+
+[problem]
+id = "ast-example-generics"
+title = "ジェネリクスと関数のAST型チェック"
+difficulty = "advanced"
+category = "generics"
+description = """
+ジェネリクス、関数、複雑な型制約を含むAST形式の型アサーション例です。
+型パラメータと制約を正しく定義してください。
+"""
+code = """
+// ジェネリック関数
+function identity<T>(value: T): T {
+  return value;
+}
+
+// 配列操作のジェネリック関数
+function getFirst<T>(arr: T[]): T | undefined {
+  return arr[0];
+}
+
+// 制約付きジェネリクス
+function logLength<T extends { length: number }>(item: T): T {
+  console.log(item.length);
+  return item;
+}
+
+// 複雑な型のマッピング
+type Partial<T> = {
+  [P in keyof T]?: T[P];
+};
+
+// インターフェースとジェネリクス
+interface KeyValuePair<K, V> {
+  key: K;
+  value: V;
+}
+
+// 高階関数
+const map = <T, U>(arr: T[], fn: (item: T) => U): U[] => {
+  return arr.map(fn);
+};
+"""
+solution = "// Same as code - already has correct type annotations"
+hint1 = "ジェネリクスは `<T>` のように型パラメータを定義します。"
+hint2 = "制約は `T extends SomeType` で表現します。"
+
+# ============================================================================
+# AST-based Type Assertions
+# ============================================================================
+
+[[typeAssertions]]
+symbol = "identity"
+symbolKind = "function"
+mode = "exact"
+description = "identity はジェネリック恒等関数であること"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "value"
+[typeAssertions.pattern.parameters.type]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "typeReference"
+name = "T"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "getFirst"
+symbolKind = "function"
+mode = "structural"
+description = "getFirst は配列の最初の要素を返すジェネリック関数であること"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "arr"
+[typeAssertions.pattern.parameters.type]
+kind = "array"
+[typeAssertions.pattern.parameters.type.elementType]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "union"
+
+[[typeAssertions.pattern.returnType.types]]
+kind = "typeReference"
+name = "T"
+
+[[typeAssertions.pattern.returnType.types]]
+kind = "primitive"
+type = "undefined"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "logLength"
+symbolKind = "function"
+mode = "exact"
+description = "logLength は length プロパティを持つ型に制約されたジェネリック関数であること"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+[typeAssertions.pattern.typeParameters.constraint]
+kind = "object"
+[[typeAssertions.pattern.typeParameters.constraint.properties]]
+name = "length"
+[typeAssertions.pattern.typeParameters.constraint.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.parameters]]
+name = "item"
+[typeAssertions.pattern.parameters.type]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "typeReference"
+name = "T"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "KeyValuePair"
+symbolKind = "interface"
+mode = "structural"
+description = "KeyValuePair は2つの型パラメータを持つインターフェースであること"
+
+[typeAssertions.pattern]
+kind = "interface"
+name = "KeyValuePair"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "K"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "V"
+
+[[typeAssertions.pattern.properties]]
+name = "key"
+[typeAssertions.pattern.properties.type]
+kind = "typeReference"
+name = "K"
+
+[[typeAssertions.pattern.properties]]
+name = "value"
+[typeAssertions.pattern.properties.type]
+kind = "typeReference"
+name = "V"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "map"
+symbolKind = "variable"
+mode = "structural"
+description = "map は高階関数であること"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "U"
+
+[[typeAssertions.pattern.parameters]]
+name = "arr"
+[typeAssertions.pattern.parameters.type]
+kind = "array"
+[typeAssertions.pattern.parameters.type.elementType]
+kind = "typeReference"
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "fn"
+[typeAssertions.pattern.parameters.type]
+kind = "function"
+[[typeAssertions.pattern.parameters.type.parameters]]
+name = "item"
+[typeAssertions.pattern.parameters.type.parameters.type]
+kind = "typeReference"
+name = "T"
+[typeAssertions.pattern.parameters.type.returnType]
+kind = "typeReference"
+name = "U"
+
+[typeAssertions.pattern.returnType]
+kind = "array"
+[typeAssertions.pattern.returnType.elementType]
+kind = "typeReference"
+name = "U"
+
+# ----------------------------------------------------------------------------
+
+[[typeAssertions]]
+symbol = "Partial"
+symbolKind = "type"
+mode = "structural"
+description = "Partial はマップ型であること"
+
+[typeAssertions.pattern]
+kind = "mapped"
+optionalModifier = "+"
+
+# Note: Mapped types are complex and may need special handling
+# This is a simplified representation
+[typeAssertions.pattern.keyType]
+kind = "wildcard"
+description = "keyof T"
+
+[typeAssertions.pattern.valueType]
+kind = "wildcard"
+description = "T[P]"

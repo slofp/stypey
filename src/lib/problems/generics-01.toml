@@ -60,83 +60,263 @@ stack.push(1);
 stack.push(2);
 const num = stack.pop();
 """
-# 型推論要件
+# AST-based Type Assertions
 [[typeAssertions]]
 symbol = "getFirst"
-expectedType = "<T>(arr: T[]) => T | undefined"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "ジェネリック関数の定義"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "arr"
+[typeAssertions.pattern.parameters.type]
+kind = "array"
+[typeAssertions.pattern.parameters.type.elementType]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "union"
+
+[[typeAssertions.pattern.returnType.types]]
+kind = "typeReference"
+name = "T"
+
+[[typeAssertions.pattern.returnType.types]]
+kind = "primitive"
+type = "undefined"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "logLength"
-expectedType = "<T extends { length: number }>(item: T) => T"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "制約付きジェネリック関数"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+[typeAssertions.pattern.typeParameters.constraint]
+kind = "object"
+[[typeAssertions.pattern.typeParameters.constraint.properties]]
+name = "length"
+[typeAssertions.pattern.typeParameters.constraint.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.parameters]]
+name = "item"
+[typeAssertions.pattern.parameters.type]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "typeReference"
+name = "T"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "KeyValuePair"
-expectedType = "interface KeyValuePair<K, V> { key: K; value: V; }"
-kind = "property"
+symbolKind = "interface"
+mode = "structural"
 description = "ジェネリックインターフェース"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "interface"
+name = "KeyValuePair"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "K"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "V"
+
+[[typeAssertions.pattern.properties]]
+name = "key"
+[typeAssertions.pattern.properties.type]
+kind = "typeReference"
+name = "K"
+
+[[typeAssertions.pattern.properties]]
+name = "value"
+[typeAssertions.pattern.properties.type]
+kind = "typeReference"
+name = "V"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "Stack"
-expectedType = "class Stack<T> { push(item: T): void; pop(): T | undefined; }"
-kind = "property"
+symbolKind = "class"
+mode = "structural"
 description = "ジェネリッククラス"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "class"
+name = "Stack"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.methods]]
+name = "push"
+[typeAssertions.pattern.methods.signature]
+kind = "function"
+[[typeAssertions.pattern.methods.signature.parameters]]
+name = "item"
+[typeAssertions.pattern.methods.signature.parameters.type]
+kind = "typeReference"
+name = "T"
+[typeAssertions.pattern.methods.signature.returnType]
+kind = "primitive"
+type = "void"
+
+[[typeAssertions.pattern.methods]]
+name = "pop"
+[typeAssertions.pattern.methods.signature]
+kind = "function"
+[typeAssertions.pattern.methods.signature.returnType]
+kind = "union"
+[[typeAssertions.pattern.methods.signature.returnType.types]]
+kind = "typeReference"
+name = "T"
+[[typeAssertions.pattern.methods.signature.returnType.types]]
+kind = "primitive"
+type = "undefined"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "numbers"
-expectedType = "number | undefined"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "getFirstの戻り値（数値配列）"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "undefined"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "strings"
-expectedType = "string | undefined"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "getFirstの戻り値（文字列配列）"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "undefined"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "strLength"
-expectedType = "string"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "logLengthの戻り値（文字列）"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "arrLength"
-expectedType = "number[]"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "logLengthの戻り値（数値配列）"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "array"
+
+[typeAssertions.pattern.elementType]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "pair"
-expectedType = "KeyValuePair<string, string>"
-kind = "variable"
+symbolKind = "variable"
+mode = "assignable"
 description = "文字列のkey-valueペア"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "KeyValuePair"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "numberPair"
-expectedType = "KeyValuePair<number, number>"
-kind = "variable"
+symbolKind = "variable"
+mode = "assignable"
 description = "数値のkey-valueペア"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "KeyValuePair"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "num"
-expectedType = "number | undefined"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "Stackからpopした値"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.types]]
+kind = "primitive"
+type = "undefined"
 solution = """
 // 1. ジェネリック関数を定義してください
 // 配列の最初の要素を返す関数

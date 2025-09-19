@@ -162,7 +162,7 @@ export type TypeAssertionKind = 'variable' | 'function' | 'parameter' | 'return'
 export type TypeComparisonMode = 'exact' | 'structural' | 'assignable' | 'type-alias';
 
 /**
- * 型推論要件定義
+ * 型推論要件定義（従来の文字列ベース）
  */
 export interface TypeAssertion {
   readonly symbol: string;          // 検証対象のシンボル名
@@ -172,6 +172,21 @@ export interface TypeAssertion {
   readonly comparisonMode?: TypeComparisonMode; // 型比較モード（デフォルト: structural）
   readonly allowSubtypes?: boolean; // サブタイプを許可するか（デフォルト: true）
   readonly ignoreOptional?: boolean; // オプショナルプロパティを無視するか（デフォルト: false）
+}
+
+/**
+ * AST-based type assertion (new format)
+ */
+export interface ASTTypeAssertion {
+  readonly symbol: string;
+  readonly symbolKind: import('./astSchema.js').SymbolKind;
+  readonly pattern: import('./astSchema.js').TypePattern;
+  readonly mode: import('./astSchema.js').ComparisonMode;
+  readonly description?: string;
+  readonly errorMessage?: string;
+  readonly allowSubtypes?: boolean;
+  readonly ignoreOptional?: boolean;
+  readonly checkExcessProperties?: boolean;
 }
 
 /**
@@ -187,7 +202,14 @@ export interface Problem {
   readonly solution: string;
   readonly hints: ReadonlyArray<string>;
   readonly tags: ReadonlyArray<string>;
-  readonly typeAssertions: ReadonlyArray<TypeAssertion>; // 型推論要件
+  readonly typeAssertions: ReadonlyArray<TypeAssertion | ASTTypeAssertion>; // 型推論要件 (両形式サポート)
+}
+
+/**
+ * Type guard for AST type assertions
+ */
+export function isASTTypeAssertion(assertion: TypeAssertion | ASTTypeAssertion): assertion is ASTTypeAssertion {
+  return 'pattern' in assertion && 'symbolKind' in assertion && 'mode' in assertion;
 }
 
 /**

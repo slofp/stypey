@@ -1,6 +1,9 @@
 <script lang="ts">
-  import type { Problem, TypeAssertion } from '$types/problem';
+  import type { Problem, TypeAssertion, ASTTypeAssertion } from '$types/problem';
+  import { isASTTypeAssertion } from '$types/problem';
   import { VirtualTypeChecker } from '$services/virtualTypeChecker';
+  import { createComparator } from '$services/astComparator';
+  import type { ASTAssertionResult } from '$types/astSchema';
   import { Button, Badge } from '$components/UI';
   import { slide } from 'svelte/transition';
   import { IconPlayerPause, IconBolt, IconCheck, IconX, IconQuestionMark, IconAlertTriangle, IconConfetti } from '@tabler/icons-svelte';
@@ -12,10 +15,11 @@
   }
   
   interface TestResult {
-    assertion: TypeAssertion;
+    assertion: TypeAssertion | ASTTypeAssertion;
     status: 'pending' | 'running' | 'passed' | 'failed';
     actualType?: string;
     error?: string;
+    astResult?: ASTAssertionResult; // For AST-based results
   }
   
   let { problem, userCode, onComplete }: Props = $props();
@@ -60,10 +64,18 @@
       return;
     }
     
-    // TypeScript Compiler APIで型検証（真のAST解析）
+    // TypeScript Compiler APIで型検証
     try {
-      // Virtual TypeScript Environmentで型を抽出
-      const extractedTypes = await VirtualTypeChecker.extractTypes(userCode);
+      // Check if we have any AST-based assertions
+      const hasASTAssertions = problem.typeAssertions.some(isASTTypeAssertion);
+      
+      // Extract types based on the format we need
+      const extractedTypes = hasASTAssertions
+        ? await VirtualTypeChecker.extractTypePatterns(userCode)
+        : await VirtualTypeChecker.extractTypes(userCode);
+      
+      // Create AST comparator if needed
+      const comparator = hasASTAssertions ? createComparator() : null;
       
       // 各アサーションを検証
       for (let i = 0; i < problem.typeAssertions.length; i++) {
@@ -77,27 +89,62 @@
         
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        const actualType = extractedTypes.get(assertion.symbol);
-        if (!actualType) {
-          testResult.status = 'failed';
-          testResult.error = `シンボル '${assertion.symbol}' が見つかりません`;
-          testResult.actualType = 'undefined';
-          allPassed = false;
-        } else {
-          // Virtual TypeScript Environmentで型比較
-          const comparisonResult = VirtualTypeChecker.compareTypes(
-            assertion.expectedType,
-            actualType
-          );
+        if (isASTTypeAssertion(assertion)) {
+          // AST-based comparison
+          const extractedTypeInfo = (extractedTypes as Map<string, import('$types/astSchema').ExtractedTypeInfo>).get(assertion.symbol);
           
-          if (comparisonResult.matches) {
-            testResult.status = 'passed';
-            testResult.actualType = actualType.typeString;
-          } else {
+          if (!extractedTypeInfo) {
             testResult.status = 'failed';
-            testResult.error = comparisonResult.details;
-            testResult.actualType = actualType.typeString;
+            testResult.error = `シンボル '${assertion.symbol}' が見つかりません`;
+            testResult.actualType = 'undefined';
             allPassed = false;
+          } else {
+            // Use AST comparator
+            const astResult = comparator!.compare(
+              assertion.pattern,
+              extractedTypeInfo,
+              assertion.mode
+            );
+            
+            testResult.astResult = astResult;
+            
+            if (astResult.passed) {
+              testResult.status = 'passed';
+              testResult.actualType = extractedTypeInfo.rawTypeString || 'matched';
+            } else {
+              testResult.status = 'failed';
+              // Build error message from AST errors
+              const errorMessages = astResult.errors.map(e => e.message).join(', ');
+              testResult.error = errorMessages || 'Type mismatch';
+              testResult.actualType = extractedTypeInfo.rawTypeString || 'unknown';
+              allPassed = false;
+            }
+          }
+        } else {
+          // Legacy string-based comparison
+          const actualType = (extractedTypes as Map<string, import('$services/virtualTypeChecker').InferredType>).get(assertion.symbol);
+          
+          if (!actualType) {
+            testResult.status = 'failed';
+            testResult.error = `シンボル '${assertion.symbol}' が見つかりません`;
+            testResult.actualType = 'undefined';
+            allPassed = false;
+          } else {
+            // Virtual TypeScript Environmentで型比較
+            const comparisonResult = VirtualTypeChecker.compareTypes(
+              assertion.expectedType,
+              actualType
+            );
+            
+            if (comparisonResult.matches) {
+              testResult.status = 'passed';
+              testResult.actualType = actualType.typeString;
+            } else {
+              testResult.status = 'failed';
+              testResult.error = comparisonResult.details;
+              testResult.actualType = actualType.typeString;
+              allPassed = false;
+            }
           }
         }
         
@@ -220,12 +267,24 @@
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">種類:</span>
-                  <span class="detail-value">{result.assertion.kind}</span>
+                  <span class="detail-value">
+                    {isASTTypeAssertion(result.assertion) ? result.assertion.symbolKind : result.assertion.kind}
+                  </span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">期待される型:</span>
-                  <pre class="type-value">{result.assertion.expectedType}</pre>
+                  <pre class="type-value">
+                    {isASTTypeAssertion(result.assertion) 
+                      ? `Pattern: ${result.assertion.pattern.kind}` 
+                      : result.assertion.expectedType}
+                  </pre>
                 </div>
+                {#if isASTTypeAssertion(result.assertion)}
+                  <div class="detail-row">
+                    <span class="detail-label">比較モード:</span>
+                    <span class="detail-value">{result.assertion.mode}</span>
+                  </div>
+                {/if}
                 {#if result.actualType}
                   <div class="detail-row">
                     <span class="detail-label">実際の型:</span>

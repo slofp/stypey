@@ -68,47 +68,118 @@ hints = [
 ]
 tags = ["basics", "types", "annotations"]
 
-# 型推論要件
+# AST-based Type Assertions
 [[typeAssertions]]
 symbol = "userName"
-expectedType = "string"
-kind = "variable"
+symbolKind = "variable"
+mode = "exact"
 description = "userName は string 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "userAge"
-expectedType = "number"
-kind = "variable"
+symbolKind = "variable"
+mode = "exact"
 description = "userAge は number 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "isActive"
-expectedType = "boolean"
-kind = "variable"
+symbolKind = "variable"
+mode = "exact"
 description = "isActive は boolean 型であること"
+
+[typeAssertions.pattern]
+kind = "primitive"
+type = "boolean"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "numbers"
-expectedType = "number[]"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "numbers は number[] 型であること"
+
+[typeAssertions.pattern]
+kind = "array"
+
+[typeAssertions.pattern.elementType]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "words"
-expectedType = "string[]"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "words は string[] 型であること"
+
+[typeAssertions.pattern]
+kind = "array"
+
+[typeAssertions.pattern.elementType]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "user"
-expectedType = "{id: number, name: string, email: string}"
-kind = "variable"
+symbolKind = "variable"
+mode = "structural"
 description = "user は適切なオブジェクト型であること"
-comparisonMode = "structural"  # プロパティの順序を無視して構造的に比較
+
+[typeAssertions.pattern]
+kind = "object"
+allowExtraProperties = false
+
+[[typeAssertions.pattern.properties]]
+name = "id"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "name"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "email"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "greet"
-expectedType = "(name: string) => string"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "greet は string を受け取り string を返す関数であること"
-comparisonMode = "structural"  # 関数表記の違いを吸収
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.parameters]]
+name = "name"
+[typeAssertions.pattern.parameters.type]
+kind = "primitive"
+type = "string"
+
+[typeAssertions.pattern.returnType]
+kind = "primitive"
+type = "string"

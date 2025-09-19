@@ -97,80 +97,249 @@ hints = [
   "Exclude<T, U> はUnion型から特定の型を除外します"
 ]
 tags = ["utility", "types", "transformation", "builtin"]
-# 型推論要件
+# AST-based Type Assertions
 [[typeAssertions]]
 symbol = "User"
-expectedType = "interface User { id: number; name: string; email: string; age?: number; isActive: boolean; }"
-kind = "property"
+symbolKind = "interface"
+mode = "structural"
 description = "基本となるUserインターフェース"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "interface"
+name = "User"
+
+[[typeAssertions.pattern.properties]]
+name = "id"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "name"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "email"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.properties]]
+name = "age"
+optional = true
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "number"
+
+[[typeAssertions.pattern.properties]]
+name = "isActive"
+[typeAssertions.pattern.properties.type]
+kind = "primitive"
+type = "boolean"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "PartialUser"
-expectedType = "Partial<User>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "すべてのプロパティをオプショナルにしたUser"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Partial"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "User"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "RequiredUser"
-expectedType = "Required<User>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "すべてのプロパティを必須にしたUser"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Required"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "User"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "UserBasicInfo"
-expectedType = "Pick<User, 'id' | 'name' | 'email'>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "特定のプロパティのみを抽出したUser"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Pick"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "User"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "union"
+[[typeAssertions.pattern.typeArguments.types]]
+kind = "literal"
+value = "id"
+[[typeAssertions.pattern.typeArguments.types]]
+kind = "literal"
+value = "name"
+[[typeAssertions.pattern.typeArguments.types]]
+kind = "literal"
+value = "email"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "UserWithoutStatus"
-expectedType = "Omit<User, 'isActive'>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "特定のプロパティを除外したUser"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Omit"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "User"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "literal"
+value = "isActive"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "ReadonlyUser"
-expectedType = "Readonly<User>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "読み取り専用にしたUser"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Readonly"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "User"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "StringNumberMap"
-expectedType = "Record<string, number>"
-kind = "property"
+symbolKind = "type"
+mode = "structural"
 description = "文字列キーと数値値のマップ"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Record"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "Status"
-expectedType = "'pending' | 'success' | 'error' | 'cancelled'"
-kind = "property"
+symbolKind = "type"
+mode = "structural"
 description = "ステータスのUnion型"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "union"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "pending"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "success"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "error"
+
+[[typeAssertions.pattern.types]]
+kind = "literal"
+value = "cancelled"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "ActiveStatus"
-expectedType = "Exclude<Status, 'cancelled'>"
-kind = "property"
+symbolKind = "type"
+mode = "assignable"
 description = "cancelledを除外したステータス"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "generic"
+typeName = "Exclude"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "generic"
+typeName = "Status"
+
+[[typeAssertions.pattern.typeArguments]]
+kind = "literal"
+value = "cancelled"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "updateUser"
-expectedType = "(user: PartialUser) => void"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "部分的なUserで更新する関数"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.parameters]]
+name = "user"
+[typeAssertions.pattern.parameters.type]
+kind = "generic"
+typeName = "PartialUser"
+
+[typeAssertions.pattern.returnType]
+kind = "primitive"
+type = "void"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "createUser"
-expectedType = "(user: RequiredUser) => void"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "完全なUserで作成する関数"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.parameters]]
+name = "user"
+[typeAssertions.pattern.parameters.type]
+kind = "generic"
+typeName = "RequiredUser"
+
+[typeAssertions.pattern.returnType]
+kind = "primitive"
+type = "void"

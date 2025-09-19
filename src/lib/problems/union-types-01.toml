@@ -86,31 +86,138 @@ hints = [
   "Discriminated Unionは共通のプロパティで型を識別します"
 ]
 tags = ["union", "types", "guards", "discriminated"]
-# 型推論要件
+# AST-based Type Assertions
 [[typeAssertions]]
 symbol = "processValue"
-expectedType = "(value: string | number) => string | number"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "Union型を受け取り処理する関数"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.parameters]]
+name = "value"
+[typeAssertions.pattern.parameters.type]
+kind = "union"
+[[typeAssertions.pattern.parameters.type.types]]
+kind = "primitive"
+type = "string"
+[[typeAssertions.pattern.parameters.type.types]]
+kind = "primitive"
+type = "number"
+
+[typeAssertions.pattern.returnType]
+kind = "union"
+[[typeAssertions.pattern.returnType.types]]
+kind = "primitive"
+type = "string"
+[[typeAssertions.pattern.returnType.types]]
+kind = "primitive"
+type = "number"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "Result"
-expectedType = "{ status: 'success'; data: string } | { status: 'error'; error: string } | { status: 'loading' }"
-kind = "property"
+symbolKind = "type"
+mode = "structural"
 description = "Discriminated Union型の定義"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "union"
+discriminator = "status"
+
+[[typeAssertions.pattern.types]]
+kind = "object"
+[[typeAssertions.pattern.types.properties]]
+name = "status"
+[typeAssertions.pattern.types.properties.type]
+kind = "literal"
+value = "success"
+[[typeAssertions.pattern.types.properties]]
+name = "data"
+[typeAssertions.pattern.types.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.types]]
+kind = "object"
+[[typeAssertions.pattern.types.properties]]
+name = "status"
+[typeAssertions.pattern.types.properties.type]
+kind = "literal"
+value = "error"
+[[typeAssertions.pattern.types.properties]]
+name = "error"
+[typeAssertions.pattern.types.properties.type]
+kind = "primitive"
+type = "string"
+
+[[typeAssertions.pattern.types]]
+kind = "object"
+[[typeAssertions.pattern.types.properties]]
+name = "status"
+[typeAssertions.pattern.types.properties.type]
+kind = "literal"
+value = "loading"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "handleResult"
-expectedType = "(result: Result) => void"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "Result型を処理する関数"
-comparisonMode = "type-alias"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.parameters]]
+name = "result"
+[typeAssertions.pattern.parameters.type]
+kind = "generic"
+typeName = "Result"
+
+[typeAssertions.pattern.returnType]
+kind = "primitive"
+type = "void"
+
+# ----------------------------------------------------------------------------
 
 [[typeAssertions]]
 symbol = "processData"
-expectedType = "<T>(data: T[] | Record<string, T>) => number"
-kind = "function"
+symbolKind = "function"
+mode = "structural"
 description = "配列またはオブジェクトを処理する関数"
-comparisonMode = "structural"
+
+[typeAssertions.pattern]
+kind = "function"
+
+[[typeAssertions.pattern.typeParameters]]
+name = "T"
+
+[[typeAssertions.pattern.parameters]]
+name = "data"
+[typeAssertions.pattern.parameters.type]
+kind = "union"
+
+[[typeAssertions.pattern.parameters.type.types]]
+kind = "array"
+[typeAssertions.pattern.parameters.type.types.elementType]
+kind = "typeReference"
+name = "T"
+
+[[typeAssertions.pattern.parameters.type.types]]
+kind = "generic"
+typeName = "Record"
+[[typeAssertions.pattern.parameters.type.types.typeArguments]]
+kind = "primitive"
+type = "string"
+[[typeAssertions.pattern.parameters.type.types.typeArguments]]
+kind = "typeReference"
+name = "T"
+
+[typeAssertions.pattern.returnType]
+kind = "primitive"
+type = "number"
