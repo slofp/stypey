@@ -3,7 +3,7 @@
   import { isASTTypeAssertion } from '$types/problem';
   import { VirtualTypeChecker } from '$services/virtualTypeChecker';
   import { createComparator } from '$services/astComparator';
-  import type { ASTAssertionResult } from '$types/astSchema';
+  import type { ASTAssertionResult, EnhancedExtractedTypeInfo } from '$types/astSchema';
   import { patternToString } from '$types/typePatterns';
   import { Button, Badge } from '$components/UI';
   import { slide } from 'svelte/transition';
@@ -70,8 +70,15 @@
       // Check if we have any AST-based assertions
       const hasASTAssertions = problem.typeAssertions.some(isASTTypeAssertion);
       
+      // Check if any assertion has constraints
+      const hasConstraints = problem.typeAssertions.some(
+        assertion => isASTTypeAssertion(assertion) && assertion.constraints?.enabled
+      );
+      
       // Extract types based on the format we need
-      const extractedTypes = hasASTAssertions
+      const extractedTypes = hasConstraints
+        ? await VirtualTypeChecker.extractEnhancedTypePatterns(userCode)
+        : hasASTAssertions
         ? await VirtualTypeChecker.extractTypePatterns(userCode)
         : await VirtualTypeChecker.extractTypes(userCode);
       
@@ -92,7 +99,9 @@
         
         if (isASTTypeAssertion(assertion)) {
           // AST-based comparison
-          const extractedTypeInfo = (extractedTypes as Map<string, import('$types/astSchema').ExtractedTypeInfo>).get(assertion.symbol);
+          const extractedTypeInfo = assertion.constraints?.enabled
+            ? (extractedTypes as Map<string, import('$types/astSchema').EnhancedExtractedTypeInfo>).get(assertion.symbol)
+            : (extractedTypes as Map<string, import('$types/astSchema').ExtractedTypeInfo>).get(assertion.symbol);
           
           if (!extractedTypeInfo) {
             testResult.status = 'failed';
@@ -100,11 +109,10 @@
             testResult.actualType = 'undefined';
             allPassed = false;
           } else {
-            // Use AST comparator
-            const astResult = comparator!.compare(
-              assertion.pattern,
-              extractedTypeInfo,
-              assertion.mode
+            // Use AST comparator with constraints
+            const astResult = comparator!.compareWithAssertion(
+              assertion,
+              extractedTypeInfo
             );
             
             testResult.astResult = astResult;
@@ -114,9 +122,19 @@
               testResult.actualType = extractedTypeInfo.rawTypeString || 'matched';
             } else {
               testResult.status = 'failed';
-              // Build error message from AST errors
-              const errorMessages = astResult.errors.map(e => e.message).join(', ');
-              testResult.error = errorMessages || 'Type mismatch';
+              // Build error message from AST errors and constraint violations
+              const errorMessages = astResult.errors.map(e => e.message);
+              
+              // Add constraint violation messages
+              if (astResult.constraintResult && !astResult.constraintResult.passed) {
+                for (const violation of astResult.constraintResult.violations) {
+                  if (violation.severity === 'error') {
+                    errorMessages.push(`[制約違反] ${violation.message}`);
+                  }
+                }
+              }
+              
+              testResult.error = errorMessages.join(', ') || 'Type mismatch';
               testResult.actualType = extractedTypeInfo.rawTypeString || 'unknown';
               allPassed = false;
             }
@@ -303,6 +321,32 @@
                       <span class="mode-hint">{getModeDescription(result.assertion.mode)}</span>
                     </div>
                   </div>
+                  {#if result.assertion.constraints?.enabled}
+                    <div class="detail-row">
+                      <span class="detail-label">制約:</span>
+                      <div class="constraints-info">
+                        {#if result.astResult?.constraintResult}
+                          {#if result.astResult.constraintResult.passed}
+                            <span class="constraint-passed">✓ すべての制約を満たしています</span>
+                          {:else}
+                            <div class="constraint-violations">
+                              {#each result.astResult.constraintResult.violations as violation}
+                                <div class="violation-item {violation.severity}">
+                                  <span class="violation-type">[{violation.type}]</span>
+                                  <span class="violation-message">{violation.message}</span>
+                                  {#if violation.suggestion}
+                                    <span class="violation-suggestion">💡 {violation.suggestion}</span>
+                                  {/if}
+                                </div>
+                              {/each}
+                            </div>
+                          {/if}
+                        {:else}
+                          <span class="constraint-info">制約チェックが有効です</span>
+                        {/if}
+                      </div>
+                    </div>
+                  {/if}
                 {/if}
                 {#if result.actualType}
                   <div class="detail-row">
@@ -642,5 +686,73 @@
     margin: 0;
     font-size: 0.875rem;
     color: var(--text-secondary);
+  }
+  
+  .constraints-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  
+  .constraint-passed {
+    color: var(--status-success);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .constraint-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+  
+  .constraint-violations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .violation-item {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    border-left: 3px solid;
+  }
+  
+  .violation-item.error {
+    background-color: var(--error-bg);
+    border-color: var(--error-border);
+  }
+  
+  .violation-item.warning {
+    background-color: var(--warning-bg);
+    border-color: var(--warning-border);
+  }
+  
+  .violation-item.info {
+    background-color: var(--info-bg);
+    border-color: var(--info-border);
+  }
+  
+  .violation-item.hint {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-light);
+  }
+  
+  .violation-type {
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+  }
+  
+  .violation-message {
+    color: var(--text-primary);
+  }
+  
+  .violation-suggestion {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-style: italic;
   }
 </style>

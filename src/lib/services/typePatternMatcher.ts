@@ -27,6 +27,7 @@ import type {
   EnumMemberPattern,
   WildcardPattern,
   ExtractedTypeInfo,
+  EnhancedExtractedTypeInfo,
   SymbolKind,
   ASTNodeInfo,
   SourceLocation,
@@ -69,6 +70,235 @@ export class TypePatternMatcher {
       location,
       rawTypeString: this.typeChecker.typeToString(type)
     };
+  }
+
+  /**
+   * Extract enhanced type information with creation method detection
+   */
+  public extractEnhancedTypeInfo(node: ts.Node): EnhancedExtractedTypeInfo | undefined {
+    const basicInfo = this.extractTypeInfo(node);
+    if (!basicInfo) return undefined;
+
+    const typeCreationInfo = this.detectTypeCreationMethod(node);
+    const complexity = this.calculateTypeComplexity(basicInfo.typePattern);
+    const docInfo = this.extractDocumentation(node);
+
+    return {
+      ...basicInfo,
+      typeSource: typeCreationInfo.typeSource,
+      hasTypeAnnotation: typeCreationInfo.hasTypeAnnotation,
+      hasAssertion: typeCreationInfo.hasAssertion,
+      assertionChain: typeCreationInfo.assertionChain,
+      isUnsafeCast: typeCreationInfo.isUnsafeCast,
+      typeComplexity: complexity,
+      hasDocumentation: docInfo.hasDocumentation,
+      documentation: docInfo.documentation
+    };
+  }
+
+  /**
+   * Detect how a type was created
+   */
+  private detectTypeCreationMethod(node: ts.Node): {
+    typeSource: 'annotation' | 'assertion' | 'inference' | 'cast-chain';
+    hasTypeAnnotation: boolean;
+    hasAssertion: boolean;
+    assertionChain?: string[];
+    isUnsafeCast?: boolean;
+  } {
+    // Check for variable declarations with type annotations
+    if (ts.isVariableDeclaration(node)) {
+      const hasTypeAnnotation = !!node.type;
+      
+      if (node.initializer) {
+        const assertionInfo = this.detectAssertions(node.initializer);
+        
+        if (assertionInfo.hasAssertion) {
+          const typeSource = assertionInfo.assertionChain && assertionInfo.assertionChain.length > 1 
+            ? 'cast-chain' as const
+            : 'assertion' as const;
+          
+          return {
+            typeSource,
+            hasTypeAnnotation,
+            hasAssertion: true,
+            assertionChain: assertionInfo.assertionChain,
+            isUnsafeCast: assertionInfo.isUnsafeCast
+          };
+        }
+      }
+      
+      return {
+        typeSource: hasTypeAnnotation ? 'annotation' : 'inference',
+        hasTypeAnnotation,
+        hasAssertion: false
+      };
+    }
+    
+    // Check for function declarations
+    if (ts.isFunctionDeclaration(node)) {
+      const hasReturnType = !!node.type;
+      return {
+        typeSource: hasReturnType ? 'annotation' : 'inference',
+        hasTypeAnnotation: hasReturnType,
+        hasAssertion: false
+      };
+    }
+    
+    // Check for class/interface declarations
+    if (ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
+      return {
+        typeSource: 'annotation',
+        hasTypeAnnotation: true,
+        hasAssertion: false
+      };
+    }
+    
+    // Default to inference
+    return {
+      typeSource: 'inference',
+      hasTypeAnnotation: false,
+      hasAssertion: false
+    };
+  }
+
+  /**
+   * Detect type assertions in an expression
+   */
+  private detectAssertions(node: ts.Node): {
+    hasAssertion: boolean;
+    assertionChain?: string[];
+    isUnsafeCast?: boolean;
+  } {
+    const chain: string[] = [];
+    let current: ts.Node = node;
+    let hasUndefinedOrNull = false;
+    
+    // Walk up the assertion chain
+    while (ts.isAsExpression(current) || ts.isTypeAssertionExpression(current)) {
+      if (ts.isAsExpression(current)) {
+        const typeString = current.type.getText();
+        chain.push(typeString);
+        current = current.expression;
+      } else if (ts.isTypeAssertionExpression(current)) {
+        const typeString = current.type.getText();
+        chain.push(typeString);
+        current = current.expression;
+      }
+    }
+    
+    // Check the base expression for unsafe patterns
+    if (current) {
+      const text = current.getText().toLowerCase();
+      if (text.includes('undefined') || text.includes('null')) {
+        hasUndefinedOrNull = true;
+      }
+    }
+    
+    // Detect unsafe casts (e.g., undefined as unknown as string)
+    const isUnsafeCast = hasUndefinedOrNull && chain.length > 0;
+    
+    return {
+      hasAssertion: chain.length > 0,
+      assertionChain: chain.length > 0 ? chain.reverse() : undefined,
+      isUnsafeCast
+    };
+  }
+
+  /**
+   * Calculate type complexity score
+   */
+  private calculateTypeComplexity(pattern: TypePattern, depth: number = 0): number {
+    let score = 1 + depth * 0.5;
+    
+    switch (pattern.kind) {
+      case 'primitive':
+      case 'literal':
+        return score;
+      
+      case 'array':
+        return score + this.calculateTypeComplexity((pattern as ArrayTypePattern).elementType, depth + 1);
+      
+      case 'tuple':
+        const tuplePattern = pattern as TupleTypePattern;
+        return score + tuplePattern.elements.reduce(
+          (sum, elem) => sum + this.calculateTypeComplexity(elem, depth + 1), 
+          0
+        );
+      
+      case 'object':
+        const objPattern = pattern as ObjectTypePattern;
+        return score + objPattern.properties.length * 2 + 
+          objPattern.properties.reduce(
+            (sum, prop) => sum + this.calculateTypeComplexity(prop.type, depth + 1),
+            0
+          );
+      
+      case 'union':
+      case 'intersection':
+        const unionPattern = pattern as UnionTypePattern | IntersectionTypePattern;
+        return score + unionPattern.types.length + 
+          unionPattern.types.reduce(
+            (sum, type) => sum + this.calculateTypeComplexity(type, depth + 1),
+            0
+          );
+      
+      case 'function':
+        const funcPattern = pattern as FunctionTypePattern;
+        const paramScore = funcPattern.parameters.reduce(
+          (sum, param) => sum + this.calculateTypeComplexity(param.type, depth + 1),
+          0
+        );
+        const returnScore = this.calculateTypeComplexity(funcPattern.returnType, depth + 1);
+        return score + paramScore + returnScore + 3;
+      
+      case 'generic':
+        const genericPattern = pattern as GenericTypePattern;
+        const argScore = genericPattern.typeArguments?.reduce(
+          (sum, arg) => sum + this.calculateTypeComplexity(arg, depth + 1),
+          0
+        ) || 0;
+        return score + argScore + 2;
+      
+      default:
+        return score + 2;
+    }
+  }
+
+  /**
+   * Extract JSDoc documentation
+   */
+  private extractDocumentation(node: ts.Node): {
+    hasDocumentation: boolean;
+    documentation?: string;
+  } {
+    const symbol = this.getSymbolFromNode(node);
+    if (!symbol) {
+      return { hasDocumentation: false };
+    }
+    
+    const docComment = symbol.getDocumentationComment(this.typeChecker);
+    if (docComment && docComment.length > 0) {
+      const documentation = docComment.map(comment => comment.text).join('\n');
+      return {
+        hasDocumentation: true,
+        documentation
+      };
+    }
+    
+    // Check for JSDoc comments directly
+    const jsDocTags = ts.getJSDocTags(node);
+    if (jsDocTags && jsDocTags.length > 0) {
+      const documentation = jsDocTags
+        .map(tag => tag.getText())
+        .join('\n');
+      return {
+        hasDocumentation: true,
+        documentation
+      };
+    }
+    
+    return { hasDocumentation: false };
   }
 
   /**

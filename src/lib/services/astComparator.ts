@@ -11,6 +11,7 @@ import type {
   ComparisonMode,
   ASTAssertionResult,
   ExtractedTypeInfo,
+  EnhancedExtractedTypeInfo,
   ValidationError,
   ValidationWarning,
   TypeDifference,
@@ -30,10 +31,14 @@ import type {
   TypeReferencePattern,
   WildcardPattern,
   SymbolKind,
-  ASTNodeInfo
+  ASTNodeInfo,
+  TypeConstraints,
+  ConstraintValidationResult,
+  ASTTypeAssertion
 } from '../types/astSchema.js';
 import { DEFAULT_VALIDATION_CONFIG } from '../types/astSchema.js';
 import { isPatternKind } from '../types/typePatterns.js';
+import { createConstraintChecker } from './constraintChecker.js';
 
 // ============================================================================
 // Main Comparison Engine
@@ -65,7 +70,8 @@ export class ASTComparator {
   public compare(
     expectedPattern: TypePattern,
     actualType: ExtractedTypeInfo,
-    mode: ComparisonMode = 'structural'
+    mode: ComparisonMode = 'structural',
+    constraints?: TypeConstraints
   ): ASTAssertionResult {
     this.errors.length = 0;
     this.warnings.length = 0;
@@ -84,15 +90,55 @@ export class ASTComparator {
         []
       );
 
+      // Check constraints if provided
+      let constraintResult: ConstraintValidationResult | undefined;
+      let constraintsPassed = true;
+      
+      if (constraints && constraints.enabled) {
+        // If we have enhanced type info, use it for constraints
+        const enhancedInfo = actualType as EnhancedExtractedTypeInfo;
+        if (enhancedInfo.typeSource !== undefined) {
+          const checker = createConstraintChecker();
+          constraintResult = checker.checkConstraints(enhancedInfo, constraints);
+          constraintsPassed = constraintResult.passed;
+          
+          // Add constraint violations to errors
+          for (const violation of constraintResult.violations) {
+            if (violation.severity === 'error') {
+              this.addError(
+                `CONSTRAINT_${violation.code}`,
+                violation.message,
+                violation.path ? [...violation.path] : []
+              );
+            } else if (violation.severity === 'warning') {
+              this.addWarning(
+                `CONSTRAINT_${violation.code}`,
+                violation.message,
+                violation.path ? [...violation.path] : [],
+                violation.suggestion
+              );
+            }
+          }
+        } else {
+          // If not enhanced, warn that constraints cannot be fully checked
+          this.addWarning(
+            'CONSTRAINTS_LIMITED',
+            'Type creation constraints cannot be checked without enhanced type information',
+            []
+          );
+        }
+      }
+
       return {
-        passed,
+        passed: passed && constraintsPassed,
         symbol: actualType.astNode.text ?? '',
         actualType,
         expectedPattern,
         mode,
         errors: [...this.errors],
-        warnings: [...this.warnings],
-        diff
+        warnings: this.warnings.length > 0 ? [...this.warnings] : undefined,
+        diff,
+        constraintResult
       };
     } catch (error) {
       this.addError('COMPARISON_ERROR', `Comparison failed: ${String(error)}`, []);
@@ -103,9 +149,24 @@ export class ASTComparator {
         expectedPattern,
         mode,
         errors: [...this.errors],
-        warnings: [...this.warnings]
+        warnings: this.warnings.length > 0 ? [...this.warnings] : undefined
       };
     }
+  }
+
+  /**
+   * Compare with AST assertion (includes constraints)
+   */
+  public compareWithAssertion(
+    assertion: ASTTypeAssertion,
+    actualType: ExtractedTypeInfo
+  ): ASTAssertionResult {
+    return this.compare(
+      assertion.pattern,
+      actualType,
+      assertion.mode,
+      assertion.constraints
+    );
   }
 
   /**

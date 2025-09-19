@@ -1,0 +1,138 @@
+# Problem: Coding Style Constraints
+id = "coding-style-01"
+title = "コーディングスタイル制約"
+difficulty = "medium"
+category = "style"
+description = """
+コーディングスタイル制約を使って、チーム規約に準拠したコードを書きます。
+
+要件：
+1. すべての変数名はcamelCase
+2. any型とunknown型の使用禁止
+3. オブジェクトのプロパティは最低2個、最大5個
+4. 明示的な戻り値の型注釈が必須
+"""
+
+starterCode = """
+// 変数名をcamelCaseに修正してください
+const user_name = "Alice";
+const UserAge = 25;
+
+// any/unknown型を使わずに適切な型を定義してください
+function getData(): any {
+  return { value: 42 };
+}
+
+// プロパティ数の制約を満たすようにしてください（2-5個）
+interface Config {
+  url: string;
+}
+"""
+
+solution = """
+// camelCase命名規則
+const userName: string = "Alice";
+const userAge: number = 25;
+
+// 適切な型定義と明示的な戻り値型
+function getData(): { value: number } {
+  return { value: 42 };
+}
+
+// プロパティ数が2-5個
+interface Config {
+  url: string;
+  timeout: number;
+  retryCount?: number;
+}
+"""
+
+hints = [
+  "snake_caseやPascalCaseをcamelCaseに変換します",
+  "any型の代わりに具体的な型を定義します",
+  "interfaceには2つ以上のプロパティを追加します"
+]
+
+[[typeAssertions]]
+symbol = "userName"
+symbolKind = "variable"
+pattern = { kind = "primitive", type = "string" }
+mode = "exact"
+description = "ユーザー名の変数"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.style]
+namingConvention = "camelCase"
+forbidAny = true
+forbidUnknown = true
+
+[typeAssertions.constraints.lint]
+level = "error"
+message = "変数名はcamelCaseで記述してください"
+
+[[typeAssertions]]
+symbol = "userAge"
+symbolKind = "variable"
+pattern = { kind = "primitive", type = "number" }
+mode = "exact"
+description = "ユーザー年齢の変数"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.style]
+namingConvention = "camelCase"
+
+[[typeAssertions]]
+symbol = "getData"
+symbolKind = "function"
+pattern = {
+  kind = "function",
+  parameters = [],
+  returnType = {
+    kind = "object",
+    properties = [
+      { name = "value", type = { kind = "primitive", type = "number" } }
+    ]
+  }
+}
+mode = "structural"
+description = "データ取得関数"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.style]
+forbidAny = true
+forbidUnknown = true
+requireExplicitReturnType = true
+
+[typeAssertions.constraints.lint]
+level = "error"
+message = "any型の使用は禁止されています"
+suggestion = "具体的な型を定義してください"
+
+[[typeAssertions]]
+symbol = "Config"
+symbolKind = "interface"
+pattern = {
+  kind = "interface",
+  name = "Config",
+  properties = [
+    { name = "url", type = { kind = "primitive", type = "string" } },
+    { name = "timeout", type = { kind = "primitive", type = "number" }, optional = true },
+    { name = "retryCount", type = { kind = "primitive", type = "number" }, optional = true }
+  ]
+}
+mode = "partial"
+description = "設定インターフェース"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.structural]
+minProperties = 2
+maxProperties = 5
+propertyNamingPattern = "^[a-z][a-zA-Z0-9]*$"
+
+[typeAssertions.constraints.lint]
+level = "warning"
+message = "インターフェースのプロパティ数は2-5個にしてください"

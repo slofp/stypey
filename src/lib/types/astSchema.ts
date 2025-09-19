@@ -325,6 +325,7 @@ export interface ASTTypeAssertion {
   readonly ignoreOptional?: boolean;
   readonly checkExcessProperties?: boolean;
   readonly metadata?: AssertionMetadata;
+  readonly constraints?: TypeConstraints;
 }
 
 /**
@@ -432,6 +433,7 @@ export interface ASTAssertionResult {
   readonly errors: readonly ValidationError[];
   readonly warnings?: readonly ValidationWarning[];
   readonly diff?: TypeDifference;
+  readonly constraintResult?: ConstraintValidationResult;
 }
 
 /**
@@ -536,6 +538,228 @@ export function isGenericPattern(pattern: TypePattern): pattern is GenericTypePa
 
 export function isWildcardPattern(pattern: TypePattern): pattern is WildcardPattern {
   return pattern.kind === 'wildcard';
+}
+
+// ============================================================================
+// Constraint and Filter Types
+// ============================================================================
+
+/**
+ * Type creation method constraint
+ */
+export interface TypeCreationConstraint {
+  /** Allow type annotations (e.g., const a: string) */
+  readonly allowTypeAnnotation?: boolean;
+  /** Allow type assertions (e.g., a as string) */
+  readonly allowAssertion?: boolean;
+  /** Allow type inference (no explicit type) */
+  readonly allowInference?: boolean;
+  /** Require explicit type specification */
+  readonly requireExplicitType?: boolean;
+  /** Forbid unsafe casts (e.g., undefined as unknown as T) */
+  readonly forbidUnsafeCast?: boolean;
+  /** Maximum allowed assertion chain length */
+  readonly maxAssertionChain?: number;
+}
+
+/**
+ * Value constraint for literals and ranges
+ */
+export interface ValueConstraint {
+  /** Numeric range constraint */
+  readonly numericRange?: {
+    readonly min?: number;
+    readonly max?: number;
+    readonly excludeMin?: boolean;
+    readonly excludeMax?: boolean;
+  };
+  /** String pattern (regex) */
+  readonly stringPattern?: string;
+  /** String length constraint */
+  readonly stringLength?: {
+    readonly min?: number;
+    readonly max?: number;
+  };
+  /** Allowed literal values */
+  readonly allowedValues?: readonly (string | number | boolean)[];
+  /** Forbidden literal values */
+  readonly forbiddenValues?: readonly (string | number | boolean)[];
+}
+
+/**
+ * Structural constraint for objects and classes
+ */
+export interface StructuralConstraint {
+  /** Required properties */
+  readonly requiredProperties?: readonly string[];
+  /** Forbidden properties */
+  readonly forbiddenProperties?: readonly string[];
+  /** Property naming pattern (regex) */
+  readonly propertyNamingPattern?: string;
+  /** Required methods */
+  readonly requiredMethods?: readonly string[];
+  /** Forbid method overloading */
+  readonly forbidMethodOverload?: boolean;
+  /** Must extend/implement these types */
+  readonly mustExtend?: readonly string[];
+  /** Cannot extend/implement these types */
+  readonly cannotExtend?: readonly string[];
+  /** Minimum number of properties */
+  readonly minProperties?: number;
+  /** Maximum number of properties */
+  readonly maxProperties?: number;
+}
+
+/**
+ * Coding style constraint
+ */
+export interface StyleConstraint {
+  /** Naming convention */
+  readonly namingConvention?: 'camelCase' | 'PascalCase' | 'snake_case' | 'UPPER_CASE' | 'kebab-case';
+  /** Forbid any type */
+  readonly forbidAny?: boolean;
+  /** Forbid unknown type */
+  readonly forbidUnknown?: boolean;
+  /** Forbid never type */
+  readonly forbidNever?: boolean;
+  /** Prefer type alias over interface */
+  readonly preferTypeAlias?: boolean;
+  /** Prefer interface over type alias */
+  readonly preferInterface?: boolean;
+  /** Require generic constraints */
+  readonly requireGenericConstraints?: boolean;
+  /** Generic naming pattern (regex) */
+  readonly genericNamingPattern?: string;
+  /** Forbid type assertions */
+  readonly forbidTypeAssertion?: boolean;
+  /** Require readonly for all properties */
+  readonly requireReadonly?: boolean;
+  /** Require explicit return types */
+  readonly requireExplicitReturnType?: boolean;
+}
+
+/**
+ * Type filter for inclusion/exclusion
+ */
+export interface TypeFilter {
+  /** Include only these types */
+  readonly includeTypes?: readonly TypePattern[];
+  /** Exclude these types */
+  readonly excludeTypes?: readonly TypePattern[];
+  /** Include types matching these patterns */
+  readonly includePatterns?: readonly string[];
+  /** Exclude types matching these patterns */
+  readonly excludePatterns?: readonly string[];
+  /** Custom filter function name */
+  readonly customFilter?: string;
+}
+
+/**
+ * Lint-like constraint for warnings and hints
+ */
+export interface LintConstraint {
+  /** Severity level */
+  readonly level?: 'error' | 'warning' | 'info' | 'hint';
+  /** Custom message */
+  readonly message?: string;
+  /** Suggestion for improvement */
+  readonly suggestion?: string;
+  /** Documentation link */
+  readonly documentationUrl?: string;
+  /** Warn if conditions */
+  readonly warnIf?: {
+    readonly hasAssertion?: boolean;
+    readonly hasMultipleCasts?: boolean;
+    readonly lacksDocumentation?: boolean;
+    readonly exceedsComplexity?: number;
+    readonly hasAny?: boolean;
+    readonly hasUnknown?: boolean;
+    readonly isTooGeneric?: boolean;
+  };
+}
+
+/**
+ * Combined type constraints
+ */
+export interface TypeConstraints {
+  /** Type creation constraints */
+  readonly creation?: TypeCreationConstraint;
+  /** Value constraints */
+  readonly value?: ValueConstraint;
+  /** Structural constraints */
+  readonly structural?: StructuralConstraint;
+  /** Style constraints */
+  readonly style?: StyleConstraint;
+  /** Type filters */
+  readonly filter?: TypeFilter;
+  /** Lint constraints */
+  readonly lint?: LintConstraint;
+  /** Enable constraint checking */
+  readonly enabled?: boolean;
+  /** Stop on first violation */
+  readonly stopOnFirstViolation?: boolean;
+}
+
+/**
+ * Constraint violation result
+ */
+export interface ConstraintViolation {
+  /** Type of constraint violated */
+  readonly type: 'creation' | 'value' | 'structural' | 'style' | 'filter' | 'lint';
+  /** Violation code */
+  readonly code: string;
+  /** Violation message */
+  readonly message: string;
+  /** Severity level */
+  readonly severity: 'error' | 'warning' | 'info' | 'hint';
+  /** Path to the violating element */
+  readonly path?: readonly string[];
+  /** Suggestion for fixing */
+  readonly suggestion?: string;
+  /** Documentation link */
+  readonly documentationUrl?: string;
+}
+
+/**
+ * Constraint validation result
+ */
+export interface ConstraintValidationResult {
+  /** Whether all constraints passed */
+  readonly passed: boolean;
+  /** List of violations */
+  readonly violations: readonly ConstraintViolation[];
+  /** Warning messages */
+  readonly warnings?: readonly string[];
+  /** Info messages */
+  readonly infos?: readonly string[];
+  /** Performance metrics */
+  readonly metrics?: {
+    readonly checkDuration: number;
+    readonly constraintsChecked: number;
+    readonly violationsFound: number;
+  };
+}
+
+/**
+ * Enhanced extracted type information with creation method
+ */
+export interface EnhancedExtractedTypeInfo extends ExtractedTypeInfo {
+  /** How the type was created */
+  readonly typeSource: 'annotation' | 'assertion' | 'inference' | 'cast-chain';
+  /** Has explicit type annotation */
+  readonly hasTypeAnnotation: boolean;
+  /** Has type assertion */
+  readonly hasAssertion: boolean;
+  /** Chain of assertions (for multi-step casts) */
+  readonly assertionChain?: readonly string[];
+  /** Is potentially unsafe cast */
+  readonly isUnsafeCast?: boolean;
+  /** Type complexity score */
+  readonly typeComplexity?: number;
+  /** Has JSDoc comments */
+  readonly hasDocumentation?: boolean;
+  /** JSDoc content */
+  readonly documentation?: string;
 }
 
 // ============================================================================

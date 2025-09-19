@@ -10,7 +10,7 @@ import {
 import type { VirtualTypeScriptEnvironment } from '@typescript/vfs';
 import ts from 'typescript';
 import { TypePatternMatcher, createPatternMatcher } from './typePatternMatcher.js';
-import type { ExtractedTypeInfo, TypePattern } from '../types/astSchema.js';
+import type { ExtractedTypeInfo, EnhancedExtractedTypeInfo, TypePattern } from '../types/astSchema.js';
 
 export interface InferredType {
   symbol: string;
@@ -534,6 +534,109 @@ export class VirtualTypeChecker {
   }
 
   /**
+   * Extract enhanced type patterns with creation method detection
+   */
+  static async extractEnhancedTypePatterns(code: string): Promise<Map<string, EnhancedExtractedTypeInfo>> {
+    await this.ensureInitialized();
+    if (!this.env) throw new Error('Virtual environment not initialized');
+    
+    const typeInfoMap = new Map<string, EnhancedExtractedTypeInfo>();
+    
+    // Update the main file with new code
+    this.env.updateFile('main.ts', code);
+    
+    // Get the program and type checker
+    const program = this.env.languageService.getProgram();
+    if (!program) {
+      console.warn('Could not get program from language service');
+      return typeInfoMap;
+    }
+    
+    const typeChecker = program.getTypeChecker();
+    const sourceFile = program.getSourceFile('main.ts');
+    
+    if (!sourceFile) {
+      console.warn('Could not get source file');
+      return typeInfoMap;
+    }
+    
+    // Create pattern matcher
+    const matcher = createPatternMatcher(typeChecker, sourceFile);
+    
+    // Walk the AST and extract enhanced type patterns
+    this.visitNodeWithEnhancedPatterns(sourceFile, typeChecker, matcher, typeInfoMap);
+    
+    return typeInfoMap;
+  }
+
+  /**
+   * Visit AST nodes and extract enhanced type pattern information
+   */
+  private static visitNodeWithEnhancedPatterns(
+    node: ts.Node,
+    typeChecker: ts.TypeChecker,
+    matcher: TypePatternMatcher,
+    typeInfoMap: Map<string, EnhancedExtractedTypeInfo>
+  ): void {
+    // Variable declarations
+    if (ts.isVariableStatement(node)) {
+      node.declarationList.declarations.forEach(declaration => {
+        if (ts.isIdentifier(declaration.name)) {
+          const typeInfo = matcher.extractEnhancedTypeInfo(declaration);
+          if (typeInfo) {
+            typeInfoMap.set(declaration.name.text, typeInfo);
+          }
+        }
+      });
+    }
+    
+    // Function declarations
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      const typeInfo = matcher.extractEnhancedTypeInfo(node);
+      if (typeInfo) {
+        typeInfoMap.set(node.name.text, typeInfo);
+      }
+    }
+    
+    // Interface declarations
+    if (ts.isInterfaceDeclaration(node)) {
+      const typeInfo = matcher.extractEnhancedTypeInfo(node);
+      if (typeInfo) {
+        typeInfoMap.set(node.name.text, typeInfo);
+      }
+    }
+    
+    // Type alias declarations
+    if (ts.isTypeAliasDeclaration(node)) {
+      const typeInfo = matcher.extractEnhancedTypeInfo(node);
+      if (typeInfo) {
+        typeInfoMap.set(node.name.text, typeInfo);
+      }
+    }
+    
+    // Class declarations
+    if (ts.isClassDeclaration(node) && node.name) {
+      const typeInfo = matcher.extractEnhancedTypeInfo(node);
+      if (typeInfo) {
+        typeInfoMap.set(node.name.text, typeInfo);
+      }
+    }
+    
+    // Enum declarations
+    if (ts.isEnumDeclaration(node)) {
+      const typeInfo = matcher.extractEnhancedTypeInfo(node);
+      if (typeInfo) {
+        typeInfoMap.set(node.name.text, typeInfo);
+      }
+    }
+    
+    // Continue traversing the AST
+    ts.forEachChild(node, child => {
+      this.visitNodeWithEnhancedPatterns(child, typeChecker, matcher, typeInfoMap);
+    });
+  }
+
+  /**
    * Extract a single type pattern by symbol name
    */
   static async extractTypePatternBySymbol(
@@ -541,6 +644,17 @@ export class VirtualTypeChecker {
     symbolName: string
   ): Promise<ExtractedTypeInfo | undefined> {
     const patterns = await this.extractTypePatterns(code);
+    return patterns.get(symbolName);
+  }
+
+  /**
+   * Extract a single enhanced type pattern by symbol name
+   */
+  static async extractEnhancedTypePatternBySymbol(
+    code: string,
+    symbolName: string
+  ): Promise<EnhancedExtractedTypeInfo | undefined> {
+    const patterns = await this.extractEnhancedTypePatterns(code);
     return patterns.get(symbolName);
   }
 

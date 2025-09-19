@@ -1,0 +1,124 @@
+# Problem: Type Safety with Constraints
+id = "type-constraints-01"
+title = "型安全性と制約"
+difficulty = "hard"
+category = "constraints"
+description = """
+制約機能を使った型安全性の確保を学びます。
+以下の要件を満たすようにコードを実装してください：
+
+1. `userId` - 明示的な型注釈が必須で、string型
+2. `config` - any型の使用禁止、型推論のみ許可
+3. `processData` - 型アサーションの使用禁止
+"""
+
+starterCode = """
+// 1. userIdには明示的な型注釈を付けてください
+const userId = "user123";
+
+// 2. configはany型を使わずに型推論で定義してください
+const config: any = {
+  apiUrl: "https://api.example.com",
+  timeout: 5000
+};
+
+// 3. processDataは型アサーションを使わずに実装してください
+function processData(data: unknown) {
+  return data as string;
+}
+"""
+
+solution = """
+// 1. 明示的な型注釈
+const userId: string = "user123";
+
+// 2. 型推論を使用（any禁止）
+const config = {
+  apiUrl: "https://api.example.com",
+  timeout: 5000
+};
+
+// 3. 型ガードを使用（アサーション禁止）
+function processData(data: unknown): string {
+  if (typeof data === 'string') {
+    return data;
+  }
+  throw new Error('Invalid data type');
+}
+"""
+
+hints = [
+  "userIdには `: string` を追加します",
+  "configから型注釈を削除して型推論に任せます",
+  "processDataでは型ガード（typeof）を使用します"
+]
+
+[[typeAssertions]]
+symbol = "userId"
+symbolKind = "variable"
+pattern = { kind = "primitive", type = "string" }
+mode = "exact"
+description = "userIdはstring型である必要があります"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.creation]
+requireExplicitType = true
+forbidUnsafeCast = true
+
+[typeAssertions.constraints.lint]
+level = "error"
+message = "userIdには明示的な型注釈が必要です"
+suggestion = "const userId: string = ... の形式で宣言してください"
+
+[[typeAssertions]]
+symbol = "config"
+symbolKind = "variable"
+pattern = { kind = "object", properties = [
+  { name = "apiUrl", type = { kind = "primitive", type = "string" } },
+  { name = "timeout", type = { kind = "primitive", type = "number" } }
+] }
+mode = "structural"
+description = "configオブジェクトの構造"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.creation]
+allowInference = true
+allowTypeAnnotation = false
+
+[typeAssertions.constraints.style]
+forbidAny = true
+forbidUnknown = false
+
+[typeAssertions.constraints.lint]
+level = "error"
+message = "any型の使用は禁止されています"
+suggestion = "型推論を使用するか、適切な型を定義してください"
+
+[[typeAssertions]]
+symbol = "processData"
+symbolKind = "function"
+pattern = { 
+  kind = "function",
+  parameters = [
+    { type = { kind = "primitive", type = "unknown" } }
+  ],
+  returnType = { kind = "primitive", type = "string" }
+}
+mode = "structural"
+description = "processData関数の型"
+
+[typeAssertions.constraints]
+enabled = true
+[typeAssertions.constraints.creation]
+forbidUnsafeCast = true
+allowTypeAnnotation = true
+
+[typeAssertions.constraints.style]
+forbidTypeAssertion = true
+
+[typeAssertions.constraints.lint]
+level = "error"
+message = "型アサーション（as）の使用は禁止されています"
+suggestion = "型ガードを使用して安全に型を絞り込んでください"
